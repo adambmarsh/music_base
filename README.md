@@ -1,17 +1,22 @@
-# music_base #
+# music_base
 
-Music base is a personal experiment to build a solution that makes it easier to
-find search through a music collection and automatically create playlists. 
+Music Base (musics_base) is a personal experiment to build a solution that makes it easier to
+search through a music collection and automatically create playlists. 
 
 The driver behind is project was frustration with the limitations of the search
 functionality in VLC and on my NAS (QNAP) and Kodi.  
 
-# Status #
+## Status
 
-Work in progress.
+The project thus far has offered good scope for experimenting with: 
 
-The existing code works, but there is no provision for a deployment package.
+- Django’s ORM 
+- asynchronous processing (coroutines)
 
-The code uses Python (3.10+) to traverse directories, extracting metadata and
-writing that metadata to a database asynchronously (uses coroutines).
+Planned enhancements:
+
+- create a Web GUI with a search box and an area to display the search results: 
+- search to be text- and regex-based
+- build a playlist from the query results
+- play the playlist on a music player – either local or a network resource
 
