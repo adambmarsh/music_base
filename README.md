@@ -1,12 +1,10 @@
 # music_base #
 
-This repository contains code for command-line tool to populate a PostgreSQL
-database with music metainfo. The information is harvested from a potentially
-unlimited number of .flac, .ogg, .mp3 files help in any number of directories as
-well as from directory-specific .yml files.
+Music base is a personal experiment to build a solution that makes it easier to
+find search through a music collection and automatically create playlists. 
 
-The ultimate goal is to provide a web-GUI with a mechanism to query the
-database.
+The driver behind is project was frustration with the limitations of the search
+functionality in VLC and on my NAS (QNAP) and Kodi.  
 
 # Status #
 
