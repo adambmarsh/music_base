@@ -493,7 +493,7 @@ class MusicMeta(object):
 
         try:
             default_year = int(non_tag_info.get('year', 1900))
-        except(TypeError, ValueError):
+        except (TypeError, ValueError):
             default_year = 1900
 
         if not tags or 'Various' in non_tag_info.get('artist', '') or default_year > 1900:
@@ -601,10 +601,10 @@ class MusicMeta(object):
     def determine_song_year(tag_year, non_tag_year):
         try:
             return int(tag_year)
-        except(TypeError, ValueError):
+        except (TypeError, ValueError):
             try:
                 return int(non_tag_year)
-            except(TypeError, ValueError):
+            except (TypeError, ValueError):
                 return 1900
 
     def credits_as_str(self, in_credits):
