@@ -144,6 +144,7 @@ class Song(models.Model):
     artist = models.TextField(blank=True, null=True)
     composer = models.TextField(blank=True, null=True)
     performer = models.TextField(blank=True, null=True)
+    date = models.DateField(blank=True, null=True)
     file = models.TextField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     album = models.ForeignKey(Album, models.DO_NOTHING, blank=True, null=True)
