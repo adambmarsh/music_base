@@ -102,6 +102,31 @@ class MusicMeta(object):
         self._max_albums = int(in_limit if in_limit else -1)
 
     @staticmethod
+    def map_tags(in_tags):
+        tag_map = {
+            'tracknumber': 'track',
+            'date': 'year'
+        }
+
+        return {k if k not in tag_map.keys() else tag_map[k]: in_tags[k] for k in in_tags.keys()}
+
+    def get_tags_from_file(self, file_obj):
+        tag_dict = dict()
+        f_path = os.path.join(file_obj.get('dir_path', ''), file_obj.get('file', ''))
+        try:
+            tag_dict = {k.lower(): v for k, v in dict(list(FLAC(f_path).tags)).items()}
+            return self.map_tags(tag_dict)
+
+        except FLACNoHeaderError:
+            try:
+                tag_dict = (TinyTag.get(f_path)).__dict__
+
+            except Exception as ex:
+                print(repr(ex))
+
+        return tag_dict
+
+    @staticmethod
     async def test_get_file_tags(in_file_info):
         in_dir = in_file_info.get('dir', '')
         in_file = in_file_info.get('file', '')
@@ -115,8 +140,7 @@ class MusicMeta(object):
         in_file = in_file_info.get('file', '')
         in_file_tags['directory'] = re.sub(r'^/', '', re.sub(re.compile(self.base_dir), '', in_dir_path))
         in_file_tags['file'] = in_file.split('/')[-1]
-        file_path = os.path.join(in_dir_path, in_file)
-        tag_dict = (TinyTag.get(file_path)).__dict__
+        tag_dict = self.get_tags_from_file(in_file_info)
 
         if in_dir_name and in_dir_name not in self.tags.keys():
             self.tags[in_dir_name] = list()
@@ -433,7 +457,15 @@ class MusicMeta(object):
         return yml_data
 
     @staticmethod
-    def map_track_ids(file_tags=None):
+    def natural_keys(text):
+        """
+        list.sort(key=natural_keys) sorts in human order
+        http://nedbatchelder.com/blog/200712/human_sorting.html
+        :pram text: A string from which to create a list of natural keys
+        """
+        return [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text) if c]
+
+    def map_track_ids(self, file_tags=None):
         if not file_tags:
             return None
 
@@ -444,7 +476,7 @@ class MusicMeta(object):
         if not ids_list:
             return {}
 
-        ids_list = sorted(ids_list, key=int)
+        ids_list.sort(key=self.natural_keys)
 
         return {f_id: ix for ix, f_id in enumerate(ids_list)}
 
@@ -503,7 +535,7 @@ class MusicMeta(object):
             if 'Various' in song_tags.get('directory', ''):
                 return default_year
 
-            year = song_tags.get('year', '') or ''
+            year = song_tags.get('year', song_tags.get('date', '')) or ''
 
             if year:
                 try:
