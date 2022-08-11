@@ -463,7 +463,7 @@ class MusicMeta(object):
         http://nedbatchelder.com/blog/200712/human_sorting.html
         :pram text: A string from which to create a list of natural keys
         """
-        return [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text) if c]
+        return [int(c) if c.isdigit() else c for c in re.split(r'([:;!\-,/]+)', text) if c]
 
     def map_track_ids(self, file_tags=None):
         if not file_tags:
