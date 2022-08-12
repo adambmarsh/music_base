@@ -394,22 +394,28 @@ class MusicMeta(object):
                 os.rename(os.path.join(self.base_dir, dn), os.path.join(self.base_dir, new_name))
 
     async def collect_tags(self):
-        counter_albums = 0
+        count_albums = 0
+        count_albums_exist = 0
         start_time = datetime.datetime.now()
 
         for curr_dir, sub_dirs, files in os.walk(self.base_dir):
             only_files = [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS]
             curr_dir_name = re.sub(r'^/', '', re.sub(re.compile(self.base_dir), '', curr_dir))
 
-            log_it("info", __name__, f"dir={curr_dir} file_count={len(list(only_files))}")
+            log_it("info",
+                   __name__,
+                   f"[{count_albums}+{count_albums_exist}] dir={curr_dir} file_count={len(list(only_files))}")
 
             try:
                 if curr_dir == self.base_dir:
                     continue
 
                 res = await sync_to_async(Album.objects.get)(path=curr_dir_name)  # NOQA
+
                 if res and not self.update:
+                    count_albums_exist += 1
                     continue
+
             except Album.DoesNotExist:  # NOQA
                 pass
 
@@ -420,12 +426,9 @@ class MusicMeta(object):
 
             track_id_map = self.map_track_ids(file_tags=curr_dir_tags)
             await sync_to_async(self.tags_to_db)(curr_dir_tags, yml_info, track_id_map)
-            counter_albums += 1
+            count_albums += 1
 
-            if self.max_albums < 0:
-                continue
-
-            if counter_albums >= self.max_albums:
+            if count_albums >= self.max_albums > 0:
                 break
 
         log_it("info", __name__, f"runtime={str(datetime.datetime.now() - start_time)}")
