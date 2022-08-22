@@ -180,9 +180,11 @@ def eval_none_value(in_str):
     return in_str
 
 
-class EnumResult(Enum):
+class BuildResult(Enum):
     """
-    Class encapsulating Jenkins build results as an enumeration.
+    Class encapsulating possible Jenkins build result values as an enumeration.
+    If initialised with a numeric value, it automatically converts the value into a
+    member of the enumeration, thus interpreting the value as one of the allowed Jenkins build results.
     """
     SUCCESS = 0
     FAILURE = 1
@@ -191,41 +193,45 @@ class EnumResult(Enum):
     UNKNOWN = -1
 
     @property
-    def rmembers(self):
-        return self._rmembers
+    def enum_members(self):
+        return self._enum_members
 
-    @rmembers.setter
-    def rmembers(self, in_members=None):
-        self._rmembers = in_members
+    @enum_members.setter
+    def enum_members(self, in_members=None):
+        self._enum_members = in_members
 
     def __init__(self, in_members=None):
-        self._rmembers = in_members
+        self._enum_members = in_members
 
-    @staticmethod
-    def to_str(in_val):
+    def to_str(self, in_val=None):
         """
         Convert a numeric enum value to its string representation.
 
-        :param in_val: The value to be converted to string.
-        :return: A string representation of the enum value.
+        :param in_val: The value to be converted to string
+        :return: A string representation of the enum value
         """
-        for name, member in EnumResult.__members__.items():
+        if not in_val:
+            in_val = self.value
+
+        for name, member in BuildResult.__members__.items():
             if in_val == member.value:
                 return name
 
-        return EnumResult.UNKNOWN.name
+        return BuildResult.UNKNOWN.name
 
-    @staticmethod
-    def to_val(in_str):
+    def to_val(self, in_str=None):
         """
         Convert a str representation of an enum value to its numeric equivalent.
         :param in_str: A string representation of an enum value.
         :return: A numeric value corresponding to the received string.
         """
-        if in_str not in EnumResult.__members__:
-            return EnumResult.UNKNOWN.value
+        if not in_str:
+            in_str = self.name
 
-        return [member.value for name, member in EnumResult.__members__.items() if name == in_str][0]
+        if in_str not in BuildResult.__members__:
+            return BuildResult.UNKNOWN.value
+
+        return next(iter([member.value for name, member in BuildResult.__members__.items() if name == in_str]), None)
 
 
 def contains(target, test_items):
@@ -293,62 +299,11 @@ def list_duplicate_items(in_list, dup_key=None, dup_val=None, select=None):
     return [{list_item: [ix for ix, li in enumerate(in_list) if li == list_item]} for list_item in multiples]
 
 
-class EasyDict(dict):
-    """
-    This version of EasyDict is a Python 3.6+ update of https://github.com/makinacorpus/easydict.
-    """
-    def __init__(self, d=None, **kwargs):
-        super().__init__(self)
-        self.update(**d or {}, **kwargs)
-
-    def __setattr__(self, name, value):
-        if isinstance(value, (list, tuple)):
-            value = [self.__class__(x) if isinstance(x, dict) else x for x in value]
-        elif isinstance(value, dict) and not isinstance(value, self.__class__):
-            value = self.__class__(value)
-
-        super(EasyDict, self).__setattr__(name, value)
-        super(EasyDict, self).__setitem__(name, value)
-
-    __setitem__ = __setattr__
-
-    def update(self, e=None, **f):
-        e = e or dict()
-        e.update(f)
-
-        for k, v in e.items():
-            setattr(self, k, v)
-
-    def pop(self, k, d=None):
-        delattr(self, k)
-
-        return super().pop(k, d)
-
-
 if __name__ == "__main__":
-    ed = EasyDict({"first": "I", "name": "me", "dob": "not yesterday"})
-    # print(ed.fourth)
-    # val = ed.fourth
-    # print(val)
-    ed.fourth = '4th'
-    val = ed.fourth
-    print(ed.dob)  # NOQA
+    result_instance = BuildResult(1)
 
-    ss, fs = run_scandir("/home/adam/Documents", "pdf")
+    print(f"{result_instance.to_str()}")
+    print(f"{result_instance.to_val(result_instance.to_str())}")
 
-    print(repr(ss))
-    print(repr(fs))
-    # ed.first = "Zebediah"
-    # ed.name = "Croc"
-    # ed.dob = "11_5_1838"
-    #
-    # ed.address = dict()
-    # ed.address.street = dict()
-    # ed.address.street.number = "19"
-    # ed.address.street.name = "Bochumer"
-    # ed.address.town = "Berlin"
-    # ed.address.postcode = "10551"
-    # print(repr(ed))
-    #
-    # ed.address.street.pop("number", "one")
-    # print(repr(ed))
+    for res in BuildResult:
+        print(repr(res))
