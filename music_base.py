@@ -402,10 +402,6 @@ class MusicMeta(object):
             only_files = [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS]
             curr_dir_name = re.sub(r'^/', '', re.sub(re.compile(self.base_dir), '', curr_dir))
 
-            log_it("info",
-                   __name__,
-                   f"[{count_albums}+{count_albums_exist}] dir={curr_dir} file_count={len(list(only_files))}")
-
             try:
                 if curr_dir == self.base_dir:
                     continue
@@ -414,6 +410,11 @@ class MusicMeta(object):
 
                 if res and not self.update:
                     count_albums_exist += 1
+
+                    log_it("info",
+                           __name__,
+                           f"[{count_albums}+{count_albums_exist}] dir={curr_dir} file_count={len(list(only_files))}")
+
                     continue
 
             except Album.DoesNotExist:  # NOQA
@@ -437,7 +438,7 @@ class MusicMeta(object):
     async def get_music_metadata(self, in_files=None, dir_path=None, dir_name=None):
         """
         Retrieve metadata from tags in .mp3, .flac, .ogg, etc. files and from a .yml if present.
-        The data from tags are saved in self.tags, while yaml data are eturned to the caller
+        The data from tags are saved in self.tags, while yaml data are returned to the caller
         :param in_files: A list of files from an album/CD directory
         :param dir_path: The path to the album/CD directory
         :param dir_name: The name of the album/CD directory
@@ -464,7 +465,7 @@ class MusicMeta(object):
         """
         list.sort(key=natural_keys) sorts in human order
         http://nedbatchelder.com/blog/200712/human_sorting.html
-        :pram text: A string from which to create a list of natural keys
+        :param text: A string from which to create a list of natural keys
         """
         return [int(c) if c.isdigit() else c for c in re.split(r'([:;!\-,/]+)', text) if c]
 

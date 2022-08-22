@@ -17,13 +17,13 @@ if __name__ == '__main__':
     album = None
 
     # Add a record
-    if not Album.objects.filter(artist="Yes"):
+    if not Album.objects.filter(artist="Yes"):  # NOQA
         album = Album(title="Test", artist="Yes", comment="Test comment", label="Polydor")
         album.save()
 
     # Application logic
     # retrieved_cd = Album.objects.all()
-    retrieved = Album.objects.filter(artist=album.artist if album else "Yes")
+    retrieved = Album.objects.filter(artist=album.artist if album else "Yes")  # NOQA
 
     for album in retrieved:
         print(f"{repr({k: v for k, v in album.__dict__.items() if k not in ['_state', 'len']})}")

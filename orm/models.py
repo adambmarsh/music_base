@@ -149,7 +149,6 @@ class Song(models.Model):
     comment = models.TextField(blank=True, null=True)
     album = models.ForeignKey(Album, models.DO_NOTHING, blank=True, null=True)
     id = models.BigAutoField(primary_key=True)
-    date = models.DateField(blank=True, null=True)
 
     class Meta:
         managed = False
