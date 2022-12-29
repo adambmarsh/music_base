@@ -573,11 +573,47 @@ class MusicMeta(object):
         return artist
 
     @staticmethod
+    def determine_album_composer(tags, non_tag_info=None):
+        if not non_tag_info:
+            non_tag_info = dict()
+
+        default_composer = non_tag_info.get('composer', '')
+
+        if not tags or default_composer == 'Various':
+            return default_composer
+
+        composer = ''
+
+        for song_tags in tags:
+            if 'Various' in song_tags.get('directory', ''):
+                return default_composer
+
+            composer = song_tags.get('composer', song_tags.get('albumartist', song_tags.get('artist', '')))
+
+            if composer:
+                return composer
+
+        return composer
+
+    @staticmethod
     def determine_album_path(tags):
         if not tags:
             return ''
 
         return tags[0].get('directory', '')
+
+    @staticmethod
+    def credits_add_composer(in_credits=None, in_composer=""):
+        if not in_composer:
+            return in_credits or list()
+
+        if not in_credits:
+            in_credits = list()
+
+        if not [credit for credit in in_credits if "composer" in credit.lower() or "composed by" in credit.lower]:
+            in_credits.append(f"Composed by - {in_composer}")
+
+        return in_credits
 
     def determine_album_comment(self, tags, non_tag_info=None):
         if not tags:
@@ -589,7 +625,10 @@ class MusicMeta(object):
         description = non_tag_info.get('description', None)
         description = "" if not description else description
         # Use credits and/or notes to build a comment
-        cd_credits = self.credits_as_str(non_tag_info.get('credits', None))
+        composer = self.determine_album_composer(tags, non_tag_info)
+        working_credits = non_tag_info.get('credits', None)
+        working_credits = self.credits_add_composer(in_credits=working_credits, in_composer=composer)
+        cd_credits = self.credits_as_str(working_credits)
         notes = self.notes_as_str(non_tag_info.get('notes', None))
 
         comment_parts = [part for part in [description, cd_credits, notes] if part]
