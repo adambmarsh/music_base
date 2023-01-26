@@ -1,6 +1,10 @@
 import os
 
+from utils import read_file
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+HOST_ADDRESS = f'{read_file(".host_address", os.getcwd())}'
 
 # PostreSQL
 DATABASES = {
@@ -9,7 +13,7 @@ DATABASES = {
         'NAME': 'music',
         'USER': 'postgres',
         'PASSWORD': 'postgres',  # 'bromberg58'
-        'HOST': '192.168.8.24',  # '127.0.0.1'
+        'HOST': HOST_ADDRESS,  # '127.0.0.1'
         'PORT': '5432',
     }
 }

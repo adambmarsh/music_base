@@ -588,7 +588,10 @@ class MusicMeta(object):
             if 'Various' in song_tags.get('directory', ''):
                 return default_composer
 
-            composer = song_tags.get('composer', song_tags.get('albumartist', song_tags.get('artist', '')))
+            composer = song_tags.get('composer', default_composer)
+
+            if not composer:
+                composer = song_tags.get('albumartist', song_tags.get('artist', ''))
 
             if composer:
                 return composer
@@ -610,7 +613,7 @@ class MusicMeta(object):
         if not in_credits:
             in_credits = list()
 
-        if not [credit for credit in in_credits if "composer" in credit.lower() or "composed by" in credit.lower]:
+        if not [cr_line for cr_line in in_credits if "composer" in cr_line.lower() or "composed by" in cr_line.lower()]:
             in_credits.append(f"Composed by - {in_composer}")
 
         return in_credits
