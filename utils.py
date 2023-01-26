@@ -81,7 +81,7 @@ def write_json_file(page_dict, filename, sort_keys=True):
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
 
-    filepath = dest_dir + filename
+    filepath = os.path.join(dest_dir, filename)
 
     with open(filepath, 'w') as out:
         out.write(json.dumps(page_dict, indent=4, sort_keys=sort_keys, ensure_ascii=False))
@@ -98,7 +98,7 @@ def write_file(filename, file_data, dest_dir=None):
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
 
-    filepath = dest_dir + filename
+    filepath = os.path.join(dest_dir, filename)
 
     if isinstance(file_data, dict):
         with open(filepath, 'w') as out:
@@ -119,11 +119,11 @@ def read_file(filename, dest_dir=None):
     if not dest_dir:
         dest_dir = cur_dir + '/../out/'
 
-    filepath = dest_dir + filename
+    filepath = os.path.join(dest_dir, filename)
 
     try:
         with open(filepath, 'r') as f:
-            return f.read()
+            return f.read().strip()
     except FileNotFoundError:
         print(f"Missing: {filepath}")
         return ''
@@ -135,7 +135,7 @@ def read_json_file(filename, dest_dir=None):
     if not dest_dir:
         dest_dir = cur_dir + '/../out/'
 
-    filepath = dest_dir + filename
+    filepath = os.path.join(dest_dir, filename)
 
     with open(filepath, 'r') as f:
         return json.load(f)
