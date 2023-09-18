@@ -17,7 +17,9 @@ import application_imports  # NOQA
 from asgiref.sync import sync_to_async
 from utils import eval_bool_str, log_it
 from orm.models import Album, Song  # NOQA
-# from django.db.models import Q
+
+
+__version__ = '0.0.2'
 
 
 composer_classical = ['Beethoven', 'Mozart', 'Chopin']
@@ -40,6 +42,7 @@ USE_FILE_EXTENSIONS = ["ape", "flac", "mp3", "ogg", "wma", "yml"]
 
 class MusicMeta(object):
     def __init__(self, base_dir, check_only=False, update_records=False, max_albums=None):
+        self.SPLIT_PATTERN = r'[_-]+$'
         self._base_dir = base_dir
         self._candidate = dict()
         self._consider = dict()
@@ -239,13 +242,13 @@ class MusicMeta(object):
             return re.sub(k, v, in_working)
 
         if in_working.startswith('L_Shankar_others') and '_-_' not in in_working:
-            return re.sub(r'L_Shankar_', 'L_Shankar_-_', in_working)
+            return in_working.replace('L_Shankar_', 'L_Shankar_-_')
 
         if in_working.startswith('Beethoven_-_') and '_L_v_-_' not in in_working:
-            return re.sub(r'Beethoven_-_', 'Beethoven_L_v_-_', in_working)
+            return in_working.replace('Beethoven_-_', 'Beethoven_L_v_-_')
 
         if in_working.startswith('Mozart_-_') and '_WA_-_' not in in_working:
-            return re.sub(r'Mozart_-_', 'Mozart_WA_-_', in_working)
+            return in_working.replace('Mozart_-_', 'Mozart_WA_-_')
 
         return in_working
 
@@ -290,7 +293,7 @@ class MusicMeta(object):
         return hyphen_pos, underscore_pos
 
     def split_work_str(self, in_str):
-        w_str = re.sub(r'[_-]+$', '', in_str)
+        w_str = re.sub(self.SPLIT_PATTERN, '', in_str)
         splitter = ''
 
         hyphen_pos, underscore_pos = self.get_hyphen_underscore_pos(in_str)
@@ -339,15 +342,14 @@ class MusicMeta(object):
         if year:
             work_str = re.sub(re.compile('_+' + year + r'$'), '', work_str)
 
-        work_str = re.sub(r'[_-]+$', '', work_str)
-        work_str = re.sub(r'___', '__', work_str)
+        work_str = re.sub(self.SPLIT_PATTERN, '', work_str).replace('___', '__')
 
         # Remove CD{number}_{year}, note {year} is not surrounded by []:
         if work_c:
             work_str = re.sub(re.compile(work_c + r'?_\d{4}' + work_c + r'?'), '', work_str)
 
         # Remove trailing '_' and '_':
-        return re.sub(r'[_-]+$', '', re.sub(r'_+-_+', '_-_', work_str))
+        return re.sub(self.SPLIT_PATTERN, '', re.sub(r'_+-_+', '_-_', work_str))
 
     def get_new_name(self, old_name):
         working = self.fix_up_name(working_name=old_name)
@@ -356,7 +358,7 @@ class MusicMeta(object):
         if y and y not in working:
             y_str = '__' + y
             if '__CD' in working:
-                working = re.sub(r'__CD', r'' + y_str + r'__CD', working)
+                working = working.replace('__CD', y_str + '__CD')
 
         fy = re.findall(re.compile('[-_]+' + y), working) if (y and y in working) else \
             re.findall(r'[-_]+\d{4}', working)
@@ -379,8 +381,6 @@ class MusicMeta(object):
             if not os.path.isdir(os.path.join(self.base_dir, dn)):
                 continue  # Not a directory
             newname = self.get_new_name(dn)
-            # print("newname={}".format(newname))
-            # print("dn={}".format(dn))
             if ('_-_' not in newname or '_-_' not in dn) and dn != newname:
                 self.consider[dn] = newname
 
@@ -433,7 +433,6 @@ class MusicMeta(object):
                 break
 
         log_it("info", __name__, f"runtime={str(datetime.datetime.now() - start_time)}")
-        return
 
     async def get_music_metadata(self, in_files=None, dir_path=None, dir_name=None):
         """
@@ -642,7 +641,8 @@ class MusicMeta(object):
         if not tag_comment:
             tag_comment = ""
 
-        tag_comment = tag_comment.strip()
+        # Remove junk content from comment:
+        tag_comment = re.sub(r'X{3,}DURATION[0-9:.]+', '', tag_comment.strip())
 
         if not non_tag_track_data or not isinstance(non_tag_track_data, dict):
             return tag_comment
@@ -650,23 +650,8 @@ class MusicMeta(object):
         song_comment = song_credits = ""
         for name, value in non_tag_track_data.items():
             song_credits = value.get('credits', '')
-
-            if song_credits:
-                song_credits = self.render_as_str(song_credits, in_lead="")
-            else:
-                if isinstance(value, dict):
-                    for nm, vl in value.items():
-                        if nm == 'duration':
-                            continue
-
-                        if not isinstance(vl, dict):
-                            continue
-
-                        sub_song_credits = vl.get('credits', '')
-                        if not sub_song_credits:
-                            continue
-
-                        song_credits += f"\n{nm} " + self.render_as_str(sub_song_credits, in_lead="")
+            song_credits = self.render_as_str(song_credits, in_lead="") if song_credits else \
+                self.get_song_credits_from_dict(song_credits, value)
 
             song_comment = value.get('comment', '')
             song_comment = self.render_as_str(song_comment, in_lead="")
@@ -674,6 +659,25 @@ class MusicMeta(object):
         comment_parts = [c for c in [tag_comment, str(song_comment or ''), str(song_credits or '')] if c.strip()]
 
         return "\n".join(comment_parts) if comment_parts else ""
+
+    def get_song_credits_from_dict(self, in_credits, in_dict):
+        if not isinstance(in_dict, dict):
+            return in_credits
+
+        for nm, vl in in_dict.items():
+            if nm == 'duration':
+                continue
+
+            if not isinstance(vl, dict):
+                continue
+
+            sub_song_credits = vl.get('credits', '')
+            if not sub_song_credits:
+                continue
+
+            in_credits += f"\n{nm} " + self.render_as_str(sub_song_credits, in_lead="")
+
+        return in_credits
 
     @staticmethod
     def determine_song_year(tag_year, non_tag_year):
@@ -722,9 +726,6 @@ class MusicMeta(object):
         return f"{lead}{str(in_date)}"
 
     def render_as_str(self, in_item, in_lead="\n"):
-        # if not in_item:
-        #     return ''
-
         type_select = {
             int: self.int_type_as_str,
             str: self.str_type_as_str,
@@ -847,8 +848,6 @@ class MusicMeta(object):
         for tags in dir_tags:
             self.song_tags_to_db(tags, album, from_yaml, id_map)
 
-        return
-
     @staticmethod
     def read_yaml(f_path):
         f_contents = dict()
@@ -858,18 +857,13 @@ class MusicMeta(object):
                 f_contents = yaml.load(f_yml, Loader=yaml.FullLoader)
         except yaml.scanner.ScannerError as e:  # NOQA
             log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-            pass
         except yaml.parser.ParserError as e:  # NOQA
             log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-            pass
 
         return f_contents
 
 
 async def main():
-    # basedir = '/home/adam/lanmount/music'# '/home/adam/Music'
-    # basedir = '/home/adam/lanmount/share/music'
-
     parser = argparse.ArgumentParser(description="This program normalises names of music file directories to use "
                                                  "underscores instead of spaces, etc.")
     parser.add_argument("-d", "--directory", help="Full path to the parent directory containing sub-directories with "
@@ -940,5 +934,3 @@ async def main():
 
 
 run(main)
-# if __name__ == '__main__':
-#     main()
