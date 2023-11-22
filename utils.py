@@ -18,6 +18,9 @@ from enum import Enum
 SEC_IN_DAY = 24 * 3600
 
 
+OUT_RELATIVE_PATH = '/../out/'
+
+
 def log_it(level='info', src_name=None, text=None):
     import logging
 
@@ -25,14 +28,13 @@ def log_it(level='info', src_name=None, text=None):
     logger_name = src_name if src_name else __name__
     log_writer = logging.getLogger(logger_name)
 
-    if level == 'info':
-        log_writer.info(text)
-    elif level == 'error':
-        log_writer.error(text)
-    elif level == 'warning':
-        log_writer.warning(text)
-    else:
-        log_writer.debug(text)
+    do_log = {
+        "info": log_writer.info,
+        "error": log_writer.error,
+        "warning": log_writer.warning,
+    }
+
+    do_log.get(level, log_writer.debug)(text)
 
 
 def timed_function(func):
@@ -59,9 +61,7 @@ def run_scandir(in_dir, ext):    # dir: str, ext: list
             sub_dirs.append(f.path)
         if f.is_file():
             fn_ext_lower = os.path.splitext(f.name)[1].lower()
-            if ext and fn_ext_lower and fn_ext_lower in ext:
-                fn_files.append(f.path)
-            else:
+            if not ext or (ext and fn_ext_lower and fn_ext_lower in ext):
                 fn_files.append(f.path)
 
     for directory in list(sub_dirs):
@@ -76,7 +76,7 @@ def run_scandir(in_dir, ext):    # dir: str, ext: list
 
 def write_json_file(page_dict, filename, sort_keys=True):
     cur_dir = os.getcwd()
-    dest_dir = cur_dir + '/../out/'
+    dest_dir = cur_dir + OUT_RELATIVE_PATH
 
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
@@ -93,7 +93,7 @@ def write_file(filename, file_data, dest_dir=None):
     cur_dir = os.getcwd()
 
     if not dest_dir:
-        dest_dir = cur_dir + '/../out/'
+        dest_dir = cur_dir + OUT_RELATIVE_PATH
 
     if not os.path.isdir(dest_dir):
         os.mkdir(dest_dir)
@@ -117,7 +117,7 @@ def read_file(filename, dest_dir=None):
     cur_dir = os.getcwd()
 
     if not dest_dir:
-        dest_dir = cur_dir + '/../out/'
+        dest_dir = cur_dir + OUT_RELATIVE_PATH
 
     filepath = os.path.join(dest_dir, filename)
 
@@ -133,7 +133,7 @@ def read_json_file(filename, dest_dir=None):
     cur_dir = os.getcwd()
 
     if not dest_dir:
-        dest_dir = cur_dir + '/../out/'
+        dest_dir = cur_dir + OUT_RELATIVE_PATH
 
     filepath = os.path.join(dest_dir, filename)
 
