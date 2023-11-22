@@ -156,8 +156,8 @@ class MusicMeta(object):
         self.tags[in_dir_name].append(save_dict)
 
     def get_year_from_tags(self, dir_name):
-        my_path = join(self.base_dir, dir_name)
-        only_files = [str(join(my_path, f)) for f in listdir(my_path) if isfile(join(my_path, f))]
+        my_path = str(join(self.base_dir, dir_name))
+        only_files = [join(my_path, f) for f in listdir(my_path) if isfile(join(my_path, f))]
 
         only_files = [f for f in only_files if re.search(r'\.(flac|mp3|ogg|wma)$', f)]
 
