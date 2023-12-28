@@ -101,8 +101,13 @@ class TagSetter(object):
         tags['artist'] = self.yml.get('artist', '')
 
         if genre.lower() == 'classical':
-            tags['composer'] = self.yml.get('artist', '')
+            artist = self.yml.get('artist', '')
+            if artist:
+                artist_parts = artist.split(" ")
+                tags['composer'] = " ".join([f"{artist_parts[-1]},"] + artist_parts[:-1])
+
             tags['albumartist'] = self.yml.get('performer', '')
+            tags['artist'] = ", ".join([tags['artist'], tags['albumartist']])
 
         track_info = self.get_track_info_from_yml(alpha_name)
         tags['title'] = re.sub(r'^\d{,2} *', '', next(iter(track_info.keys()), '')
