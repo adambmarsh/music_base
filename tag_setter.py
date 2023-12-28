@@ -43,14 +43,6 @@ class TagSetter(object):
     def yml_file(self, in_yml):
         self._yml_file = in_yml
 
-    @property
-    def song_tags(self):
-        return self._song_tags
-
-    @song_tags.setter
-    def song_tags(self, in_tags):
-        self._song_tags = dict(**in_tags)
-
     @staticmethod
     def read_yaml(f_path):
         f_contents = dict()
@@ -78,7 +70,7 @@ class TagSetter(object):
             work_key = list(track.keys())[0] if isinstance(track, dict) else track
             alnum_key = work_key.translate(str.maketrans('', '', string.punctuation))
 
-            if in_key in alnum_key:
+            if in_key in alnum_key or in_key.lower() in alnum_key.lower():
                 return track
 
         return dict()
