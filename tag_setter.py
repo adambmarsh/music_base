@@ -8,9 +8,9 @@ from music_meta import MusicMeta, USE_FILE_EXTENSIONS
 
 
 script_description = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
-Make sure the audio files have names composed of track numbers and titles as in the YAML file. 
+Make sure the audio files have names composed of track numbers and titles as in the YAML file.
 
-See example_yml dir in https://github.com/adambmarsh/music_base 
+See example_yml dir in https://github.com/adambmarsh/music_base
 """
 
 
