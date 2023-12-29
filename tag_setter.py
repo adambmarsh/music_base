@@ -3,16 +3,11 @@ import os
 import re
 import string
 
-import yaml
-from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA
 import music_tag
-from utils import log_it
+from music_meta import MusicMeta, USE_FILE_EXTENSIONS
 
 
 script_description = "Set metadata tags on audio files, e.g. mp3 or flac from a yaml file."
-
-
-USE_FILE_EXTENSIONS = ["ape", "flac", "mp3", "ogg", "wma"]
 
 
 class TagSetter(object):
@@ -24,7 +19,7 @@ class TagSetter(object):
 
         self.dir = in_dir
         self.yml_file = in_yml
-        self.yml = self.read_yaml(os.path.join(self.dir, self.yml_file))
+        self.yml = MusicMeta(base_dir=self.dir).read_yaml(os.path.join(self.dir, self.yml_file))
         self.song_tags = dict()
 
     @property
@@ -43,25 +38,11 @@ class TagSetter(object):
     def yml_file(self, in_yml):
         self._yml_file = in_yml
 
-    @staticmethod
-    def read_yaml(f_path):
-        f_contents = dict()
-
-        try:
-            with open(f_path) as f_yml:
-                f_contents = yaml.load(f_yml, Loader=yaml.FullLoader)
-        except yaml.scanner.ScannerError as e:  # NOQA
-            log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-        except yaml.parser.ParserError as e:  # NOQA
-            log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-
-        return f_contents
-
     def get_audio_file_list(self):
         out_files = list()
 
         for curr_dir, sub_dirs, files in os.walk(self.dir):
-            out_files += [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS]
+            out_files += [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS[:-1]]
 
         return out_files
 
