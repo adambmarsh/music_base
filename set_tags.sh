@@ -31,7 +31,8 @@ python_pkg="$HOME/scripts/music_base/tag_setter.py"
 # echo "activation path: $activate_path"
 
 Usage() {
-    echo "This script sets ID3 tags .flac and .mp3 audio files from a YAML file."
+    echo "This program sets ID3 tags .flac and .mp3 audio files from a YAML file."
+    echo "Make sure the audio files have names composed of track numbers and titles as in the YAML file." 
     echo "See example_yml dir in https://github.com/adambmarsh/music_base"
     echo ""
     echo "Usage:"
