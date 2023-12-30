@@ -5,7 +5,7 @@ import string
 
 import music_tag
 from music_meta import MusicMeta, USE_FILE_EXTENSIONS
-
+from utils import log_it
 
 script_description = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
 Make sure the audio files have names composed of track numbers and titles as in the YAML file.
@@ -73,8 +73,47 @@ class TagSetter(object):
 
         return dict()
 
+    def set_artist_composer(self, in_genre: str, in_tags: dict) -> dict:
+        if not isinstance(in_tags, dict):
+            log_it("warning", "tags not a dict")
+            return in_tags
+
+        artist = self.yml.get('artist', '')
+
+        if not artist:
+            log_it("warning", "No artist in YAML")
+            return in_tags
+
+        in_tags['artist'] = artist
+
+        if in_genre.lower() not in ['classical', 'opera']:
+            return in_tags
+
+        # Assume `artist` is  `composer`, then performer(s)
+        performer = self.yml.get('performer', '')
+        artist_seq = artist.split(", ")
+        artist = next(iter(artist_seq), '')
+
+        if len(artist_seq) > 1:
+            performer = ", ".join(artist_seq[1:]) if not performer else performer
+
+        artist_parts = artist.split(" ")
+
+        if not artist_parts:
+            return in_tags
+
+        in_tags['composer'] = self.yml.get('composer',
+                                           " ".join([f"{artist_parts[-1]},"] + artist_parts[:-1]))
+
+        in_tags['albumartist'] = performer
+
+        if in_tags['albumartist'] and in_tags['albumartist'] not in in_tags['artist']:
+            in_tags['artist'] = ", ".join([in_tags['artist'], in_tags['albumartist']])
+
+        return in_tags
+
     def track_tags_from_yml(self, file_name) -> dict:
-        rx_pattern = re.compile('.' + '|'.join(USE_FILE_EXTENSIONS) + '$')
+        rx_pattern = re.compile('.(' + '|'.join(USE_FILE_EXTENSIONS) + ')$')
         file_base = re.sub(rx_pattern, '', file_name)
         alnum_name = file_base.translate(str.maketrans('', '', string.punctuation + string.whitespace + "–"))
         alpha_name = re.sub(r'^\d+', '', alnum_name)
@@ -88,16 +127,7 @@ class TagSetter(object):
         tags['album'] = self.yml.get('title', '')
         tags['year'] = self.yml.get('year', '')
         tags['tracknumber'] = alnum_name.replace(alpha_name, '')
-        tags['artist'] = self.yml.get('artist', '')
-
-        if genre.lower() == 'classical':
-            artist = self.yml.get('artist', '')
-            if artist:
-                artist_parts = artist.split(" ")
-                tags['composer'] = " ".join([f"{artist_parts[-1]},"] + artist_parts[:-1])
-
-            tags['albumartist'] = self.yml.get('performer', '')
-            tags['artist'] = ", ".join([tags['artist'], tags['albumartist']])
+        tags = self.set_artist_composer(genre, tags)
 
         track_info = self.get_track_info_from_yml(alpha_name, tags['tracknumber'])
         tags['title'] = re.sub(r'^\d+ *', '', next(iter(track_info.keys()), '')
