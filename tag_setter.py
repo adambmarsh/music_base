@@ -53,7 +53,7 @@ class TagSetter(object):
     def get_track_info_from_yml(self, in_key, in_number):
         for track in self.yml.get('tracks'):
             work_key = list(track.keys())[0] if isinstance(track, dict) else track
-            track_num = re.sub(r'(^\d+).+', '\\1', work_key)
+            track_num = re.sub(r'(^\d{2}).+', '\\1', work_key)
 
             if in_number != track_num:
                 continue
@@ -116,7 +116,7 @@ class TagSetter(object):
         rx_pattern = re.compile('.(' + '|'.join(USE_FILE_EXTENSIONS) + ')$')
         file_base = re.sub(rx_pattern, '', file_name)
         alnum_name = file_base.translate(str.maketrans('', '', string.punctuation + string.whitespace + "–"))
-        alpha_name = re.sub(r'^\d+', '', alnum_name)
+        alpha_name = re.sub(r'^\d{2}', '', alnum_name)
 
         tags = dict()
         genre = self.yml.get('genre', '')
@@ -130,7 +130,7 @@ class TagSetter(object):
         tags = self.set_artist_composer(genre, tags)
 
         track_info = self.get_track_info_from_yml(alpha_name, tags['tracknumber'])
-        tags['title'] = re.sub(r'^\d+ *', '', next(iter(track_info.keys()), '')
+        tags['title'] = re.sub(r'^\d{2} *', '', next(iter(track_info.keys()), '')
                                if isinstance(track_info, dict) else track_info)
 
         return tags
