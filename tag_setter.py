@@ -22,7 +22,7 @@ class TagSetter(object):
         self._song_tags = dict()
 
         self.dir = in_dir
-        self.yml_file = in_yml
+        self.yml_file = in_yml if in_yml else (self.last_dir_in_path(self.dir) + ".yml")
         self.yml = MusicMeta(base_dir=self.dir).read_yaml(os.path.join(self.dir, self.yml_file))
         self.song_tags = dict()
 
@@ -41,6 +41,13 @@ class TagSetter(object):
     @yml_file.setter
     def yml_file(self, in_yml):
         self._yml_file = in_yml
+
+    @staticmethod
+    def last_dir_in_path(in_path: str):
+        if in_path.endswith("/"):
+            in_path = in_path[:-1]
+
+        return in_path.split("/")[-1]
 
     def get_audio_file_list(self):
         out_files = list()
@@ -166,7 +173,7 @@ if __name__ == '__main__':
                         help="Name of the yaml file from which to read tag content",
                         type=str,
                         dest='yaml_file',
-                        required=True)
+                        required=False)
 
     args = parser.parse_args()
 

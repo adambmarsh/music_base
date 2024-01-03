@@ -26,7 +26,8 @@
 ## Set paths as appropriate to your system:
 
 activate_path="$HOME/.virtualenvs/music_base/bin/activate"
-python_pkg="$HOME/scripts/music_base/tag_setter.py"
+python_pkg_dir="$HOME/scripts/music_base"
+python_pkg="$python_pkg_dir/tag_setter.py"
 
 # echo "activation path: $activate_path"
 
@@ -36,8 +37,10 @@ Usage() {
     echo "See example_yml dir in https://github.com/adambmarsh/music_base"
     echo ""
     echo "Usage:"
-    echo "    -d \"target directory containing the files to tag \""
-    echo "    -y \"input YAML file from which tags are generated and applied to the audio files\""
+    echo "    -d target directory containing the files to tag" 
+    echo "    -y name of the input YAML file from which to generate tags and apply them to the audio files; "
+    echo "       if the input file name is absent, it is assumed to share the name and location of the target "
+    echo "       directory."
     echo "    --help"
 }
 
@@ -80,6 +83,8 @@ if [[ -n "$iyaml" ]] && [[ ! -f $input_dir/$iyaml ]]; then
     exit 2
 fi
 
+cur_dir=$(pwd)
+
 ## Use path appropriate to the host system in the directive below:
 # shellcheck source=/home/adam/.virtualenvs/generate-vlc-playlist/bin/activate
-source "$activate_path" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate
+source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && cd "$cur_dir" || exit
