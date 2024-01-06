@@ -15,7 +15,6 @@ See example_yml dir in https://github.com/adambmarsh/music_base
 
 
 class TagSetter(object):
-
     def __init__(self, in_dir='', in_yml=''):
         self._dir = ''
         self._yml_file = ''
@@ -57,10 +56,10 @@ class TagSetter(object):
 
         return out_files
 
-    def get_track_info_from_yml(self, in_key, in_number):
+    def get_track_info_from_yml(self, in_key, in_number: str):
         for track in self.yml.get('tracks'):
             work_key = list(track.keys())[0] if isinstance(track, dict) else track
-            track_num = re.sub(r'(^\d{2}).+', '\\1', work_key)
+            track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
             if in_number != track_num:
                 continue
@@ -122,8 +121,9 @@ class TagSetter(object):
     def track_tags_from_yml(self, file_name) -> dict:
         rx_pattern = re.compile('.(' + '|'.join(USE_FILE_EXTENSIONS) + ')$')
         file_base = re.sub(rx_pattern, '', file_name)
-        alnum_name = file_base.translate(str.maketrans('', '', string.punctuation + string.whitespace + "–"))
-        alpha_name = re.sub(r'^\d{2}', '', alnum_name)
+        base_name = re.sub(r'^\d{,3}', '', file_base)
+        track_no = file_base[:len(base_name)*-1]
+        base_name = base_name.translate(str.maketrans('', '', string.punctuation + string.whitespace + "–"))
 
         tags = dict()
         genre = self.yml.get('genre', '')
@@ -133,12 +133,12 @@ class TagSetter(object):
 
         tags['album'] = self.yml.get('title', '')
         tags['year'] = self.yml.get('year', '')
-        tags['tracknumber'] = alnum_name.replace(alpha_name, '')
+        tags['tracknumber'] = track_no
         tags = self.set_artist_composer(genre, tags)
 
-        track_info = self.get_track_info_from_yml(alpha_name, tags['tracknumber'])
-        tags['title'] = re.sub(r'^\d{2} *', '', next(iter(track_info.keys()), '')
-                               if isinstance(track_info, dict) else track_info)
+        track_info = self.get_track_info_from_yml(base_name, tags['tracknumber'])
+        tags['title'] = next(iter(track_info.keys()), '')[len(track_no):] if isinstance(track_info, dict) else \
+            track_info
 
         return tags
 
