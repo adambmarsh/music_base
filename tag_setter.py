@@ -137,8 +137,8 @@ class TagSetter(object):
         tags = self.set_artist_composer(genre, tags)
 
         track_info = self.get_track_info_from_yml(base_name, tags['tracknumber'])
-        tags['title'] = next(iter(track_info.keys()), '')[len(track_no):] if isinstance(track_info, dict) else \
-            track_info
+        tags['title'] = next(iter(track_info.keys()), '')[len(track_no):].strip() if isinstance(track_info, dict) else \
+            track_info[len(track_no):].strip()
 
         return tags
 
