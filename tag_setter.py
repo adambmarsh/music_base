@@ -63,7 +63,7 @@ class TagSetter(object):
             if in_number != track_num:
                 continue
 
-            alnum_key = re.sub(r'\W', '', work_key)
+            alnum_key = re.sub(r'_', '', re.sub(r'\W', '', work_key))
             track_key = alnum_key.replace(track_num, '').strip()
 
             lkey = in_key
@@ -122,7 +122,7 @@ class TagSetter(object):
         file_base = re.sub(rx_pattern, '', file_name)
         base_name = re.sub(r'^\d{,3}', '', file_base)
         track_no = file_base[:len(base_name)*-1]
-        base_name = re.sub(r'\W', '', base_name)
+        base_name = re.sub(r'_', '', re.sub(r'\W', '', base_name))
 
         tags = dict()
         genre = self.yml.get('genre', '')
