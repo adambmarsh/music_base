@@ -57,18 +57,18 @@ class TagSetter(object):
 
     def get_track_info_from_yml(self, in_key, in_number: str):
         for track in self.yml.get('tracks'):
-            work_key = list(track.keys())[0] if isinstance(track, dict) else track
+            work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
             if in_number != track_num:
                 continue
 
-            alnum_key = re.sub(r'_', '', re.sub(r'\W', '', work_key))
-            track_key = alnum_key.replace(track_num, '').strip()
+            track_key = re.sub(re.compile('^' + track_num), '', re.sub(r'[^a-zA-Z0-9]+', '', work_key))
 
             lkey = in_key
             rkey = track_key
 
+            # Order keys, shorter first (lkey):
             if len(in_key) > len(track_key):
                 lkey = track_key
                 rkey = in_key
@@ -122,7 +122,6 @@ class TagSetter(object):
         file_base = re.sub(rx_pattern, '', file_name)
         base_name = re.sub(r'^\d{,3}', '', file_base)
         track_no = file_base[:len(base_name)*-1]
-        base_name = re.sub(r'_', '', re.sub(r'\W', '', base_name))
 
         tags = dict()
         genre = self.yml.get('genre', '')
@@ -135,9 +134,12 @@ class TagSetter(object):
         tags['tracknumber'] = track_no
         tags = self.set_artist_composer(genre, tags)
 
-        track_info = self.get_track_info_from_yml(base_name, tags['tracknumber'])
-        tags['title'] = next(iter(track_info.keys()), '')[len(track_no):].strip() if isinstance(track_info, dict) else \
-            track_info[len(track_no):].strip()
+        track_info = self.get_track_info_from_yml(re.sub(r'[^a-zA-Z0-9]+', '', base_name), track_no)
+        work_title = next(iter(track_info.keys()), '')[len(track_no):].strip() if isinstance(track_info, dict) else \
+            track_info[len(track_no):]
+
+        # Strip only initial non-alnum and underscores from title:
+        tags['title'] = re.sub(r'^([^a-zA-Z0-9]+)', '', work_title)
 
         return tags
 
