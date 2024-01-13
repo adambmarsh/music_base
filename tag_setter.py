@@ -60,7 +60,7 @@ class TagSetter(object):
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
-            if in_number != track_num:
+            if int(in_number) != int(track_num):
                 continue
 
             track_key = re.sub(re.compile('^' + track_num), '', re.sub(r'[^a-zA-Z0-9]+', '', work_key))
