@@ -67,3 +67,4 @@ target/
 */oss_out/
 .env*
 .host_address
+discogs.yml
