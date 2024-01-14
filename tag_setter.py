@@ -63,7 +63,7 @@ class TagSetter(object):
             if int(in_number) != int(track_num):
                 continue
 
-            track_key = re.sub(re.compile('^' + track_num), '', re.sub(r'[^a-zA-Z0-9]+', '', work_key))
+            track_key = re.sub(re.compile('^' + track_num), '', re.sub(r'((^\w+\d+)|([_()= ]+))', '', work_key))
 
             lkey = in_key
             rkey = track_key
@@ -134,12 +134,12 @@ class TagSetter(object):
         tags['tracknumber'] = track_no
         tags = self.set_artist_composer(genre, tags)
 
-        track_info = self.get_track_info_from_yml(re.sub(r'[^a-zA-Z0-9]+', '', base_name), track_no)
+        track_info = self.get_track_info_from_yml(re.sub(r'((^\w+\d+)|([_()= ]+))', '', base_name), track_no)
         work_title = next(iter(track_info.keys()), '')[len(track_no):].strip() if isinstance(track_info, dict) else \
             track_info[len(track_no):]
 
         # Strip only initial non-alnum and underscores from title:
-        tags['title'] = re.sub(r'^([^a-zA-Z0-9]+)', '', work_title)
+        tags['title'] = re.sub(r'^(^\w+\d+)', '', work_title)
 
         return tags
 
