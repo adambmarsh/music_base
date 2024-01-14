@@ -320,7 +320,7 @@ class MetaGetter(object):
                                            token=self.cfg.get("access_token", "")
                                            )
 
-        if not response.get('results', {}):
+        if not response.get('results', list()):
             response = self.dclient.get_search(q=self.query, token=self.cfg.get("access_token", ""))
 
         results = response.get('results', list())
