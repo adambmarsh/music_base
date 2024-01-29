@@ -6,7 +6,7 @@ import application_imports  # NOQA
 from orm.models import Album, Song  # NOQA
 from music_meta import MusicMeta
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 
 async def main():

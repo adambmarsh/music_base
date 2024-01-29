@@ -9,30 +9,33 @@ from utils import log_it
 from music_meta import MusicMeta, USE_FILE_EXTENSIONS
 import yaml
 from yaml_indent.yaml_indent import process_yaml_file
+from music_text_getter import MusicTextGetter
 
 
 script_description = ""
 
 
-class MetaGetter(object):
+class MetaGetter(MusicTextGetter):
 
-    def __init__(self, dest_dir="", artist="", genre="", query="", title="", match=-1):
-        self._title = self.genre = self._artist = ""
-        self._query = ""
+    def __init__(self, dest_dir="", artist="", genre="", query="", title="", release_id="", year=None, match=-1):
+        self._title = self.genre = self._artist = self._dir = self._data = self._release = self._query = ""
         self._cfg = dict()
-        self._dir = ""
-        self._data = ""
+        self._year = None
         self._match = -1
 
+        self.release = release_id
         self.match = match
         self.data = ""
         self.dir = dest_dir
+        self.year = year
         self.artist, self.title = self.resolve_artist_and_title(artist, title)
         self.genre = genre
         self.query = self.resolve_query(query)
         script_dir = os.path.dirname(os.path.realpath(__file__))
         self.cfg = MusicMeta(base_dir=script_dir).read_yaml(os.path.join(script_dir, "discogs.yml"))
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
+
+        super().__init__(album_title=self.title)
 
     @property
     def data(self):
@@ -57,6 +60,22 @@ class MetaGetter(object):
     @dir.setter
     def dir(self, in_dir):
         self._dir = in_dir
+
+    @property
+    def release(self):
+        return self._release
+
+    @release.setter
+    def release(self, in_release):
+        self._release = in_release
+
+    @property
+    def year(self):
+        return self._year
+
+    @year.setter
+    def year(self, in_year):
+        self._year = in_year
 
     @property
     def artist(self):
@@ -108,8 +127,8 @@ class MetaGetter(object):
         if len(path_end_parts) <= 1:
             return in_artist, in_title
 
-        artist = re.sub(r'[_\-]+', ' ', path_end_parts[0]).strip()
-        title = path_end_parts[1].replace('_', ' ').strip()
+        artist = in_artist or re.sub(r'[_\-]+', ' ', path_end_parts[0]).strip()
+        title = in_title or path_end_parts[1].replace('_', ' ').strip()
 
         return artist if artist != self.artist else self.artist, title if title != self.title else self.title
 
@@ -133,7 +152,8 @@ class MetaGetter(object):
         if self.match < 0:
             return True
 
-        count_to_match = len(album_data.get('tracklist', []))
+        # Count actual tracks, where type_ == 'track'
+        count_to_match = len([t for t in album_data.get('tracklist', []) if t.get('type_', '') == 'track'])
 
         if self.match > 0:
             return self.match == count_to_match
@@ -173,8 +193,8 @@ class MetaGetter(object):
         if not l_title_set.intersection(r_title_set):
             return False
 
-        if self.query and not set(re.split(r'\W', self.query)).intersection(
-                set(re.split(r'\W', album_artist + " " + album_title))):
+        if self.query and not set(re.split(r'\W', self.query.lower())).intersection(
+                set(re.split(r'\W', album_artist.lower() + " " + album_title.lower()))):
             return False
 
         return self.expected_file_no(in_album)
@@ -291,11 +311,14 @@ class MetaGetter(object):
         yml['series'] = self.extract_series(in_data.get('series', list()))
         yml['artist'] = self.get_artist(in_data.get('artists', dict()))
         yml['label'] = self.get_label(in_data.get('labels', dict()))
+        release_date = in_data.get('released', '')
         try:
-            dt = datetime.strptime(in_data.get('released', ''), '%Y-%m-%d')
+            dt = datetime.strptime(release_date, '%Y-%m-%d')
         except ValueError:
-            dt = datetime.strptime(in_data.get('released', ''), '%Y')
-
+            try:
+                dt = datetime.strptime(release_date, '%Y')
+            except ValueError:
+                dt = None
         if dt:
             yml['released'] = f"{dt.day}/{dt.month}/{dt.year}" if dt else ''
             yml_year = dt.year
@@ -308,17 +331,21 @@ class MetaGetter(object):
         yml['style'] = ", ".join(in_data.get('styles', list()))
         yml['tracks'] = self.get_tracks(in_data.get('tracklist', list()))
         yml['credits'] = self.get_album_credits(in_data.get('extraartists', ''))
-        yml['description'] = ""
+        yml['description'] = (self.get_text_data() or "") if yml.get('genre', '') in ['Jazz'] else ""
 
         return yml
 
     def get_data(self):
-        response = self.dclient.get_search(genre=self.genre,
-                                           artist=self.artist,
-                                           title=self.title,
-                                           q=self.query,
-                                           token=self.cfg.get("access_token", "")
-                                           )
+        if self.release:
+            response = self.dclient.get_release(id=self.release)
+        else:
+            response = self.dclient.get_search(genre=self.genre,
+                                               artist=self.artist,
+                                               title=self.title,
+                                               year=self.year,
+                                               q=self.query,
+                                               token=self.cfg.get("access_token", "")
+                                               )
 
         if not response.get('results', list()):
             response = self.dclient.get_search(q=self.query, token=self.cfg.get("access_token", ""))
@@ -330,6 +357,9 @@ class MetaGetter(object):
                 continue
 
             album = self.dclient.get_release(res.get('id'))
+
+            if not album or album.get('message', '') == 'Release not found.':
+                album = self.dclient.get_masters_release(res.get('id'))
 
             if not album or album.get('message', '') == 'Release not found.':
                 continue
@@ -400,6 +430,14 @@ if __name__ == '__main__':
                         type=str,
                         dest='title',
                         required=False)
+    parser.add_argument("-i", "--release_id", help="Numeric identifier of the release (Discogs)",
+                        type=str,
+                        dest='release_id',
+                        required=False)
+    parser.add_argument("-y", "--year", help="Numeric year (release year)",
+                        type=int,
+                        dest='year',
+                        required=False)
 
     args = parser.parse_args()
 
@@ -409,6 +447,8 @@ if __name__ == '__main__':
         title=args.title,
         genre=args.genre,
         artist=args.artist,
+        release_id=args.release_id,
+        year=args.year,
         match=args.match
     )
 

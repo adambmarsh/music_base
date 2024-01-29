@@ -123,7 +123,7 @@ class MusicMeta(object):
                 tag_dict = (TinyTag.get(f_path)).__dict__
 
             except Exception as ex:
-                print(repr(ex))
+                log_it("debug", __name__, repr(ex))
 
         return tag_dict
 
@@ -132,7 +132,20 @@ class MusicMeta(object):
         in_dir = in_file_info.get('dir', '')
         in_file = in_file_info.get('file', '')
 
-        print(f"dir={in_dir} file={in_file}")
+        log_it("info", __name__, f"dir={in_dir} file={in_file}")
+
+    @staticmethod
+    def fix_comment(in_comment):
+        if not in_comment:
+            return ""
+
+        if re.search(r'X{1,3}[A-Z]+DURATION', in_comment):
+            return "DURATION " + re.sub(r'[A-Z]+.+:', '', in_comment)
+
+        if re.search(r'X{1,3}[A-Z]+', in_comment):
+            return ""
+
+        return in_comment
 
     async def get_music_file_tags(self, in_file_info):
         in_file_tags = dict()
@@ -151,6 +164,8 @@ class MusicMeta(object):
             **{k.lower(): v for k, v in tag_dict.items() if not (k.startswith('_') or k == 'extra')}
         )
 
+        save_dict['comment'] = self.fix_comment(save_dict.get('comment', ''))
+
         self.tags[in_dir_name].append(save_dict)
 
     def get_year_from_tags(self, dir_name):
@@ -161,7 +176,7 @@ class MusicMeta(object):
 
         for f in only_files:
             try:
-                print(f)
+                log_it("info", __name__, f)
                 tag_dict = dict(list(FLAC(f).tags))
                 return tag_dict.get('DATE', tag_dict.get('YEAR', ''))
 
@@ -171,7 +186,7 @@ class MusicMeta(object):
                     return rel_date if not isinstance(rel_date, list) else next(iter(rel_date), '')
 
                 except Exception as ex:
-                    print(repr(ex))
+                    log_it("debug", repr(ex))
                     continue
 
         return None
@@ -464,7 +479,7 @@ class MusicMeta(object):
         http://nedbatchelder.com/blog/200712/human_sorting.html
         :param text: A string from which to create a list of natural keys
         """
-        return [int(c) if c.isdigit() else c for c in re.split(r'([:;!\-,/]+)', text) if c]
+        return [int(c) if c.isdigit() else c for c in re.split(r'([:;!\-,/ ]+)', text) if c]
 
     def map_track_ids(self, file_tags=None):
         if not file_tags:
@@ -477,7 +492,10 @@ class MusicMeta(object):
         if not ids_list:
             return {}
 
-        ids_list.sort(key=self.natural_keys)
+        try:
+            ids_list.sort(key=self.natural_keys)
+        except TypeError as te:
+            log_it("debug", __name__, repr(te))
 
         return {f_id: ix for ix, f_id in enumerate(ids_list)}
 
@@ -610,6 +628,10 @@ class MusicMeta(object):
         if not in_credits:
             in_credits = list()
 
+        if isinstance(in_credits, str):
+            # print(repr(in_credits))
+            in_credits = list([in_credits])
+
         if not [cr_line for cr_line in in_credits if "composer" in cr_line.lower() or "composed by" in cr_line.lower()]:
             in_credits.append(f"Composed by - {in_composer}")
 
@@ -647,12 +669,20 @@ class MusicMeta(object):
 
         song_comment = song_credits = ""
         for name, value in non_tag_track_data.items():
-            song_credits = value.get('credits', '')
-            song_credits = self.render_as_str(song_credits, in_lead="") if song_credits else \
-                self.get_song_credits_from_dict(song_credits, value)
+            try:
+                song_credits = value.get('credits', '')
+                song_credits = self.render_as_str(song_credits, in_lead="") if song_credits else \
+                    self.get_song_credits_from_dict(song_credits, value)
+            except AttributeError:
+                # print(f"tag_data-{name}: " + repr(value))
+                song_credits = ''
 
-            song_comment = value.get('comment', '')
-            song_comment = self.render_as_str(song_comment, in_lead="")
+            try:
+                song_comment = value.get('comment', '')
+                song_comment = self.render_as_str(song_comment, in_lead="")
+            except AttributeError:
+                # print("tag_data-comment: " + repr(value))
+                song_comment = ''
 
         comment_parts = [c for c in [tag_comment, str(song_comment or ''), str(song_credits or '')] if c.strip()]
 
@@ -698,6 +728,10 @@ class MusicMeta(object):
         return f"{lead}{str(in_int)}"
 
     @staticmethod
+    def none_type_as_str(in_value, lead="\n"):
+        return f"{lead}{in_value}"
+
+    @staticmethod
     def str_type_as_str(in_str, lead="\n"):
         return f"{lead}{str(in_str)}"
 
@@ -729,6 +763,7 @@ class MusicMeta(object):
             str: self.str_type_as_str,
             dict: self.dict_type_as_str,
             list: self.list_type_as_str,
+            None: self.none_type_as_str,
             datetime.date: self.date_type_as_str
         }
 
@@ -752,7 +787,8 @@ class MusicMeta(object):
         album_year = self.determine_album_year(in_tags, in_yml_data) or 1900
         album_path = self.determine_album_path(in_tags)
         album_artist = self.determine_album_artist(in_tags, in_yml_data)
-        album_comment = self.determine_album_comment(in_tags, in_yml_data)
+        # print(f"album: {album_path}")
+        album_comment = self.fix_comment(self.determine_album_comment(in_tags, in_yml_data))
 
         album_dict = {
             'title': album_name,
@@ -774,6 +810,7 @@ class MusicMeta(object):
             db_album.__dict__.update(**updates)
             db_album.save()
         except Album.DoesNotExist:  # NOQA
+            # print("album_dict=" + repr(album_dict))
             db_album = Album(**album_dict)
             db_album.save()
 
@@ -836,6 +873,7 @@ class MusicMeta(object):
             db_song.save()
             return True
         except Song.DoesNotExist:  # NOQA
+            # print("song_dict=" + repr(song_dict))
             db_song = Song(**song_dict)
             db_song.save()
             return True
