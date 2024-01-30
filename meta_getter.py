@@ -448,7 +448,7 @@ if __name__ == '__main__':
         genre=args.genre,
         artist=args.artist,
         release_id=args.release_id,
-        year=args.year,
+        year=args.year if args.year else None,
         match=args.match
     )
 
