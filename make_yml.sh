@@ -61,6 +61,7 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+year=0
 
 while [[ $# -gt 0 ]];
 do
@@ -83,6 +84,10 @@ do
             ;;
         -t|--title)
             title="$2"
+            shift
+            ;;
+        -y|--year)
+            year="$2"
             shift
             ;;
         --help|*)
@@ -111,11 +116,11 @@ cur_dir=$(pwd)
 # shellcheck source=/home/adam/.virtualenvs/generate-vlc-playlist/bin/activate
 
 if [[ -n "$artist" ]] || [[ -n "$title" ]]; then 
-    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -m "$to_match" && deactivate && cd "$cur_dir" || exit
+    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" && deactivate && cd "$cur_dir" || exit
 fi
 
 if [ -n "$query_str" ]; then
-    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -m "$to_match" -a "$artist" -t "$title" && deactivate && cd "$cur_dir" || exit
+    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" -a "$artist" -t "$title" && deactivate && cd "$cur_dir" || exit
 fi
 
-source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -m "$to_match" -a "$artist" -t "$title" -r "$query_str" && deactivate && cd "$cur_dir" || exit
+source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" -a "$artist" -t "$title" -r "$query_str" && deactivate && cd "$cur_dir" || exit
