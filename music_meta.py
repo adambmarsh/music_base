@@ -17,9 +17,6 @@ from utils import eval_bool_str, log_it
 from orm.models import Album, Song  # NOQA
 
 
-__version__ = '0.0.2'
-
-
 composer_classical = ['Beethoven', 'Mozart', 'Chopin']
 
 
