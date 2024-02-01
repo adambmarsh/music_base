@@ -3,7 +3,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
 
@@ -11,7 +10,6 @@ application = get_wsgi_application()
 
 # Your application specific imports
 from orm.models import Album  # NOQA
-
 
 if __name__ == '__main__':
     album = None

@@ -1,6 +1,7 @@
 import re
 
 from bs4 import BeautifulSoup, Tag
+
 from request_base import BaseRequest
 from utils import log_it
 

@@ -2,15 +2,15 @@ import argparse
 import os
 import pathlib
 import re
-
 from datetime import datetime
-from discogs_wrapper import DV
-from utils import log_it
-from music_meta import MusicMeta, USE_FILE_EXTENSIONS
-import yaml
-from yaml_indent.yaml_indent import process_yaml_file
-from music_text_getter import MusicTextGetter
 
+import yaml
+from discogs_wrapper import DV
+from yaml_indent.yaml_indent import process_yaml_file
+
+from music_meta import USE_FILE_EXTENSIONS, MusicMeta
+from music_text_getter import MusicTextGetter
+from utils import log_it
 
 script_description = ""
 
