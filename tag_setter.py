@@ -3,7 +3,8 @@ import os
 import re
 
 import music_tag
-from music_meta import MusicMeta, USE_FILE_EXTENSIONS
+
+from music_meta import USE_FILE_EXTENSIONS, MusicMeta
 from utils import log_it
 
 script_description = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.

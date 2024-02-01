@@ -14,7 +14,6 @@ import re
 import time
 from enum import Enum
 
-
 SEC_IN_DAY = 24 * 3600
 
 

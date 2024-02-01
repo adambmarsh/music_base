@@ -1,10 +1,12 @@
 import argparse
 import sys
+
+import application_imports  # NOQA
 from anyio import run
 from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA
-import application_imports  # NOQA
-from orm.models import Album, Song  # NOQA
+
 from music_meta import MusicMeta
+from orm.models import Album, Song  # NOQA
 
 __version__ = '0.2.0'
 
