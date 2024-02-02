@@ -13,6 +13,8 @@ Make sure the audio files have names composed of track numbers and titles as in 
 See example_yml dir in https://github.com/adambmarsh/music_base
 """
 
+non_alpha_pattern = r'[?!\'+\-:;,._()\[\]~@&%<>= ]+'
+
 
 class TagSetter(object):
     def __init__(self, in_dir='', in_yml=''):
@@ -56,6 +58,13 @@ class TagSetter(object):
 
         return out_files
 
+    @staticmethod
+    def clean_non_alnum(in_str, in_num_str=""):
+        if not in_num_str:
+            return re.sub(non_alpha_pattern, '', in_str)
+
+        return re.sub(re.compile('^' + in_num_str), '', re.sub(r'[?!\'\-:;,._()= ]+', '', in_str))
+
     def get_track_info_from_yml(self, in_key, in_number: str):
         for track in self.yml.get('tracks'):
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
@@ -64,7 +73,8 @@ class TagSetter(object):
             if int(in_number) != int(track_num):
                 continue
 
-            track_key = re.sub(re.compile('^' + track_num), '', re.sub(r'((^\w+\d+)|([_()= ]+))', '', work_key))
+            # Clean track name of all punctuation, spaces and digits
+            track_key = self.clean_non_alnum(work_key, track_num)
 
             lkey = in_key
             rkey = track_key
@@ -135,12 +145,13 @@ class TagSetter(object):
         tags['tracknumber'] = track_no
         tags = self.set_artist_composer(genre, tags)
 
-        track_info = self.get_track_info_from_yml(re.sub(r'((^\w+\d+)|([_()= ]+))', '', base_name), track_no)
+        # Clean file base name of all punctuation, spaces and digits
+        track_info = self.get_track_info_from_yml(self.clean_non_alnum(base_name, track_no), track_no)
         work_title = next(iter(track_info.keys()), '')[len(track_no):].strip() if isinstance(track_info, dict) else \
             track_info[len(track_no):]
 
         # Strip only initial non-alnum and underscores from title:
-        tags['title'] = re.sub(r'^(^\w+\d+)', '', work_title)
+        tags['title'] = re.sub(r'^' + non_alpha_pattern, '', work_title)
 
         return tags
 
