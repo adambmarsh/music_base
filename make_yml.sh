@@ -61,6 +61,10 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+to_match=0
+query_str=""
+artist=""
+title=""
 year=0
 
 while [[ $# -gt 0 ]];
@@ -74,7 +78,7 @@ do
             to_match="$2"
             shift
             ;;
-        -q|--query_str)
+        -r|--query_str)
             query_str="$2"
             shift
             ;;
@@ -111,16 +115,5 @@ if [[ -n "$iyaml" ]] && [[ ! -f $input_dir/$iyaml ]]; then
 fi
 
 cur_dir=$(pwd)
-
-## Use path appropriate to the host system in the directive below:
-# shellcheck source=/home/adam/.virtualenvs/generate-vlc-playlist/bin/activate
-
-if [[ -n "$artist" ]] || [[ -n "$title" ]]; then 
-    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" && deactivate && cd "$cur_dir" || exit
-fi
-
-if [ -n "$query_str" ]; then
-    source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" -a "$artist" -t "$title" && deactivate && cd "$cur_dir" || exit
-fi
 
 source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" -a "$artist" -t "$title" -r "$query_str" && deactivate && cd "$cur_dir" || exit
