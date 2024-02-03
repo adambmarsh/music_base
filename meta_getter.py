@@ -331,9 +331,22 @@ class MetaGetter(MusicTextGetter):
         yml['style'] = ", ".join(in_data.get('styles', list()))
         yml['tracks'] = self.get_tracks(in_data.get('tracklist', list()))
         yml['credits'] = self.get_album_credits(in_data.get('extraartists', ''))
-        yml['description'] = (self.get_text_data() or "") if yml.get('genre', '') in ['Jazz'] else ""
+        yml['description'] = (self.get_text_data() or "") if self.is_jazz_genre(yml.get('genre', '')) else ""
 
         return yml
+
+    @staticmethod
+    def is_jazz_genre(in_genre=''):
+        if not in_genre:
+            return False
+
+        genre_parts = re.split(r', *', in_genre)
+
+        for part in genre_parts:
+            if part in ['Jazz']:
+                return True
+
+        return False
 
     def get_data(self):
         if self.release:
