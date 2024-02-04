@@ -4,8 +4,6 @@ import re
 from os import listdir
 from os.path import isfile, join
 
-import application_imports  # NOQA
-import yaml
 from addict import Dict
 from anyio import create_task_group
 from asgiref.sync import sync_to_async
@@ -14,6 +12,7 @@ from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA
 from tinytag import TinyTag
 
+import application_imports  # NOQA
 from orm.models import Album, Song  # NOQA
 from utils import eval_bool_str, log_it
 
@@ -884,10 +883,12 @@ class MusicMeta(object):
     @staticmethod
     def read_yaml(f_path):
         f_contents = dict()
+        from ruamel.yaml import YAML
+        yaml = YAML()
 
         try:
             with open(f_path) as f_yml:
-                f_contents = yaml.load(f_yml, Loader=yaml.FullLoader)
+                f_contents = yaml.load(f_yml)
         except yaml.scanner.ScannerError as e:  # NOQA
             log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
         except yaml.parser.ParserError as e:  # NOQA
