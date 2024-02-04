@@ -4,9 +4,8 @@ import pathlib
 import re
 from datetime import datetime
 
-import yaml
 from discogs_wrapper import DV
-from yaml_indent.yaml_indent import process_yaml_file
+from ruamel.yaml import YAML
 
 from music_meta import USE_FILE_EXTENSIONS, MusicMeta
 from music_text_getter import MusicTextGetter
@@ -389,7 +388,7 @@ class MetaGetter(MusicTextGetter):
 
         content_obj = self.build_yaml_dict(extracted_data)
 
-        return yaml.dump(content_obj, default_flow_style=False, explicit_start=True, allow_unicode=True, indent=2)
+        return content_obj
 
     def write_yaml_file(self, file_data):
         cur_dir = os.getcwd()
@@ -403,14 +402,11 @@ class MetaGetter(MusicTextGetter):
 
         filepath = os.path.join(dest_dir, self.last_dir_in_path(dest_dir) + ".yml")
 
-        if isinstance(file_data, str):
-            with open(filepath, 'w') as out:
-                out.write(file_data)
-        else:
-            with open(filepath, 'wb') as out:
-                out.write(file_data)
-
-        process_yaml_file(filepath, in_place=True)
+        with open(filepath, 'wb') as out:
+            yml = YAML()
+            yml.explicit_start = True
+            yml.indent(sequence=4, offset=2)
+            yml.dump(file_data, out)
 
         return True
 

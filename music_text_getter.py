@@ -1,6 +1,7 @@
 import re
 
 from bs4 import BeautifulSoup, Tag
+from ruamel.yaml.scalarstring import PreservedScalarString as Pss
 
 from request_base import BaseRequest
 from utils import log_it
@@ -87,7 +88,7 @@ class MusicTextGetter(BaseRequest):
 
                 out_text.append(p_text)
 
-            return "| " + "\n\n".join(out_text)
+            return Pss("\n\n".join(out_text))
 
         log_it('error', __name__, "Failed to get page content from {}.".format(self.url))
         log_it('error', __name__,
