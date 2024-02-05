@@ -46,11 +46,12 @@ Usage() {
     echo "       1 or higher - the expected number of tracks (files in -d are not counted)             "
     echo "       absent (parameter is not provided) - the number of files is not checked               "
     echo "       directory.                                                                            "
-    echo "    -q search query, if not provided, the program crreates it from the name of -d (artist,   "
+    echo "    -r search query, if not provided, the program crreates it from the name of -d (artist,   "
     echo "       title)                                                                                "
     echo "    -a artist's name (band name) surrounded by double quotes; if absent, extracted from the  "
     echo "       name of -d                                                                            "
     echo "    -t album title surrounded by double quotes; if absent, extracted from the name of -d     "
+    echo "    -y the release year of the album                                                         "
     echo "    --help                                                                                   "
 }
 
