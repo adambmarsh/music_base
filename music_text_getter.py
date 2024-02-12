@@ -76,6 +76,12 @@ class MusicTextGetter(BaseRequest):
             bsoup = BeautifulSoup(response.content.decode(), "html.parser")
 
             news_right = bsoup.find("div", attrs={'class': "news_glowny_prawy"})
+            review_title = news_right.find("h3").get_text()
+            review_artist = news_right.find("h4").get_text()
+
+            if self.title not in review_title and self.artist not in review_artist:
+                return ""
+
             first_p = news_right.find_all("p", recursive=True)
             all_p = list()
             all_p = self.find_paragraphs(first_p, all_p)
