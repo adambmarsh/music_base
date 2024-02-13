@@ -9,11 +9,12 @@ from utils import log_it
 
 class MusicTextGetter(BaseRequest):
 
-    def __init__(self, url="", query_str="", album_title=""):
-        self._album_title = self._url = self._query_str = ""
+    def __init__(self, url="", query_str="", album_artist="", album_title=""):
+        self._album_title = self._album_artist = self._url = self._query_str = ""
 
         self.data = ""
         self.url = url if url else "https://jazzforum.com.pl/main/cd/"
+        self.album_artist = album_artist
         self.album_title = album_title
         self.search = self.resolve_search(query_str if query_str else self.album_title)
 
@@ -35,6 +36,14 @@ class MusicTextGetter(BaseRequest):
     @album_title.setter
     def album_title(self, in_title):
         self._album_title = in_title
+
+    @property
+    def album_artist(self):
+        return self._album_artist
+
+    @album_artist.setter
+    def album_artist(self, in_artist):
+        self._album_artist = in_artist
 
     @property
     def search(self):
@@ -65,6 +74,19 @@ class MusicTextGetter(BaseRequest):
 
         return out_paras
 
+    def validate_text_data(self, soup_to_check=None):
+        if not soup_to_check:
+            return True
+
+        review_title_set = {x for x in set(re.split(r'\W', soup_to_check.find("h3").get_text().lower())) if x}
+        review_artist_set = {y for y in set(re.split(r'\W', soup_to_check.find("h4").get_text().lower())) if y}
+
+        if not set(re.split(r'\W', self.album_title.lower())).intersection(review_title_set) and \
+                not set(re.split(r'\W', self.album_artist.lower())).intersection(review_artist_set):
+            return False
+
+        return True
+
     def get_text_data(self, as_html_str=False):
         page_url = self.url + self.search
         response = self._submit_request('GET', page_url, '')
@@ -76,10 +98,8 @@ class MusicTextGetter(BaseRequest):
             bsoup = BeautifulSoup(response.content.decode(), "html.parser")
 
             news_right = bsoup.find("div", attrs={'class': "news_glowny_prawy"})
-            review_title = news_right.find("h3").get_text()
-            review_artist = news_right.find("h4").get_text()
 
-            if self.title not in review_title and self.artist not in review_artist:
+            if not self.validate_text_data(soup_to_check=news_right):
                 return ""
 
             first_p = news_right.find_all("p", recursive=True)
