@@ -34,7 +34,7 @@ class MetaGetter(MusicTextGetter):
         self.cfg = MusicMeta(base_dir=script_dir).read_yaml(os.path.join(script_dir, "discogs.yml"))
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
 
-        super().__init__(album_title=self.title, album_artist=self.artist)
+        super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
 
     @property
     def data(self):
