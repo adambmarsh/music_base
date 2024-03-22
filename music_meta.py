@@ -625,7 +625,6 @@ class MusicMeta(object):
             in_credits = list()
 
         if isinstance(in_credits, str):
-            # print(repr(in_credits))
             in_credits = list([in_credits])
 
         if not [cr_line for cr_line in in_credits if "composer" in cr_line.lower() or "composed by" in cr_line.lower()]:
@@ -644,8 +643,9 @@ class MusicMeta(object):
         description = "" if not description else description
         # Use credits and/or notes to build a comment
         composer = self.determine_album_composer(tags, non_tag_info)
-        working_credits = non_tag_info.get('credits', None)
+        working_credits = list(non_tag_info.get('credits', None))
         working_credits = self.credits_add_composer(in_credits=working_credits, in_composer=composer)
+
         cd_credits = self.credits_as_str(working_credits)
         notes = self.notes_as_str(non_tag_info.get('notes', None))
 
@@ -670,14 +670,12 @@ class MusicMeta(object):
                 song_credits = self.render_as_str(song_credits, in_lead="") if song_credits else \
                     self.get_song_credits_from_dict(song_credits, value)
             except AttributeError:
-                # print(f"tag_data-{name}: " + repr(value))
                 song_credits = ''
 
             try:
                 song_comment = value.get('comment', '')
                 song_comment = self.render_as_str(song_comment, in_lead="")
             except AttributeError:
-                # print("tag_data-comment: " + repr(value))
                 song_comment = ''
 
         comment_parts = [c for c in [tag_comment, str(song_comment or ''), str(song_credits or '')] if c.strip()]
@@ -763,7 +761,7 @@ class MusicMeta(object):
             datetime.date: self.date_type_as_str
         }
 
-        return type_select[type(in_item)](in_item, in_lead)
+        return type_select.get(type(in_item), self.str_type_as_str)(in_item, in_lead)
 
     def notes_as_str(self, in_notes):
         if not in_notes:
@@ -783,7 +781,6 @@ class MusicMeta(object):
         album_year = self.determine_album_year(in_tags, in_yml_data) or 1900
         album_path = self.determine_album_path(in_tags)
         album_artist = self.determine_album_artist(in_tags, in_yml_data)
-        # print(f"album: {album_path}")
         album_comment = self.fix_comment(self.determine_album_comment(in_tags, in_yml_data))
 
         album_dict = {
@@ -806,7 +803,6 @@ class MusicMeta(object):
             db_album.__dict__.update(**updates)
             db_album.save()
         except Album.DoesNotExist:  # NOQA
-            # print("album_dict=" + repr(album_dict))
             db_album = Album(**album_dict)
             db_album.save()
 
@@ -869,7 +865,6 @@ class MusicMeta(object):
             db_song.save()
             return True
         except Song.DoesNotExist:  # NOQA
-            # print("song_dict=" + repr(song_dict))
             db_song = Song(**song_dict)
             db_song.save()
             return True
