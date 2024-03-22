@@ -116,7 +116,7 @@ class MusicTextGetter(BaseRequest):
 
             return Pss("\n\n".join(out_text))
 
-        log_it('error', __name__, "Failed to get page content from {}.".format(self.url))
+        log_it('error', __name__, f"Failed to get page content from {self.url}.")
         log_it('error', __name__,
                "Get content response:\n{}: {}\n".format(str(response.status_code), response.reason))
 

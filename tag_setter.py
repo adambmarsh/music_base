@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import sys
 
 import music_tag
 
@@ -132,7 +133,7 @@ class TagSetter(object):
         rx_pattern = re.compile('.(' + '|'.join(USE_FILE_EXTENSIONS) + ')$')
         file_base = re.sub(rx_pattern, '', file_name)
         base_name = re.sub(r'^\d{,3}', '', file_base)
-        track_no = file_base[:len(base_name)*-1]
+        track_no = file_base[:len(base_name) * -1]
 
         tags = dict()
         genre = self.yml.get('genre', '')
@@ -193,6 +194,6 @@ if __name__ == '__main__':
     ts = TagSetter(in_dir=args.audio_dir, in_yml=args.yaml_file)
 
     if ts.set_tags():
-        exit(0)
+        sys.exit(0)
 
-    exit(1)
+    sys.exit(1)
