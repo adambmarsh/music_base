@@ -297,7 +297,7 @@ class MetaGetter(MusicTextGetter):
             name = series.get('name', '')
             cat = series.get('catno', '')
 
-            out_series.append(" ".join([name, cat]))
+            out_series.append(str(" ".join([name, cat])))
 
         return ", ".join(out_series)
 
