@@ -15,13 +15,19 @@
 # allowed.
 #
 ###############################################################################
+"""
+Module that handles network requests (HTTPs)
+"""
 import requests
 
 
-class BaseRequest(object):
+class BaseRequest:
+    """
+    This class encapsulates a base (lowest level implementation) of a network request
+    """
 
     @property
-    def username(self):
+    def username(self):  # pylint: disable=missing-function-docstring
         return self._username
 
     @username.setter
@@ -29,7 +35,7 @@ class BaseRequest(object):
         self._username = user
 
     @property
-    def password(self):
+    def password(self):  # pylint: disable=missing-function-docstring
         return self._password
 
     @password.setter
@@ -37,7 +43,7 @@ class BaseRequest(object):
         self._password = secret
 
     @property
-    def req_headers(self):
+    def req_headers(self):  # pylint: disable=missing-function-docstring
         return self._req_headers
 
     @req_headers.setter
@@ -59,5 +65,6 @@ class BaseRequest(object):
                                 data=request_data,
                                 auth=(self.username, self.password),
                                 headers=self.req_headers if not request_headers else request_headers,
-                                verify=True
+                                verify=True,
+                                timeout=10
                                 )

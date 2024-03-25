@@ -1,24 +1,32 @@
+"""
+This module contains code to retrieve music metadata.
+"""
+
 import argparse
 import os
 import pathlib
 import re
+import sys
 from datetime import datetime
 
 from discogs_wrapper import DV
 from ruamel.yaml import YAML
 
-from music_meta import USE_FILE_EXTENSIONS, MusicMeta
-from music_text_getter import MusicTextGetter
-from utils import log_it
+from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
+from music_text_getter import MusicTextGetter  # pylint: disable=import-error
+from utils import log_it  # pylint: disable=import-error
 
-script_description = ""
+SCRIPT_DESCRIPTION = ""
 
 
 class MetaGetter(MusicTextGetter):
+    """
+    This class encapsulates functionality to retrieve music metadata.
+    """
 
     def __init__(self, dest_dir="", artist="", genre="", query="", title="", release_id="", year=None, match=-1):
         self._title = self.genre = self._artist = self._dir = self._data = self._release = self._query = ""
-        self._cfg = dict()
+        self._cfg = {}
         self._year = None
         self._match = -1
 
@@ -37,7 +45,7 @@ class MetaGetter(MusicTextGetter):
         super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
 
     @property
-    def data(self):
+    def data(self):  # pylint: disable=missing-function-docstring
         return self._data
 
     @data.setter
@@ -45,7 +53,7 @@ class MetaGetter(MusicTextGetter):
         self._data = in_data
 
     @property
-    def match(self):
+    def match(self):  # pylint: disable=missing-function-docstring
         return self._match
 
     @match.setter
@@ -53,7 +61,7 @@ class MetaGetter(MusicTextGetter):
         self._match = int(in_match)
 
     @property
-    def dir(self):
+    def dir(self):  # pylint: disable=missing-function-docstring
         return self._dir
 
     @dir.setter
@@ -61,7 +69,7 @@ class MetaGetter(MusicTextGetter):
         self._dir = in_dir
 
     @property
-    def release(self):
+    def release(self):  # pylint: disable=missing-function-docstring
         return self._release
 
     @release.setter
@@ -69,7 +77,7 @@ class MetaGetter(MusicTextGetter):
         self._release = in_release
 
     @property
-    def year(self):
+    def year(self):  # pylint: disable=missing-function-docstring
         return self._year
 
     @year.setter
@@ -77,7 +85,7 @@ class MetaGetter(MusicTextGetter):
         self._year = in_year
 
     @property
-    def artist(self):
+    def artist(self):  # pylint: disable=missing-function-docstring
         return self._artist
 
     @artist.setter
@@ -85,7 +93,7 @@ class MetaGetter(MusicTextGetter):
         self._artist = in_artist
 
     @property
-    def genre(self):
+    def genre(self):  # pylint: disable=missing-function-docstring
         return self._genre
 
     @genre.setter
@@ -93,7 +101,7 @@ class MetaGetter(MusicTextGetter):
         self._genre = in_genre
 
     @property
-    def title(self):
+    def title(self):  # pylint: disable=missing-function-docstring
         return self._title
 
     @title.setter
@@ -101,7 +109,7 @@ class MetaGetter(MusicTextGetter):
         self._title = in_title
 
     @property
-    def cfg(self):
+    def cfg(self):  # pylint: disable=missing-function-docstring
         return self._cfg
 
     @cfg.setter
@@ -109,7 +117,7 @@ class MetaGetter(MusicTextGetter):
         self._cfg = in_cfg
 
     @property
-    def query(self):
+    def query(self):  # pylint: disable=missing-function-docstring
         return self._query
 
     @query.setter
@@ -117,6 +125,13 @@ class MetaGetter(MusicTextGetter):
         self._query = in_query
 
     def resolve_artist_and_title(self, in_artist='', in_title=''):
+        """
+        Get artist and title. If they are supplied by the arguments, keep them, otherwise get them from
+        the name of the directory.
+        :param in_artist: A string containing the artist name to use
+        :param in_title: A string containing the title name to use
+        :return: artist and tile
+        """
         if in_artist and in_title:
             return in_artist, in_title
 
@@ -132,6 +147,12 @@ class MetaGetter(MusicTextGetter):
         return artist if artist != self.artist else self.artist, title if title != self.title else self.title
 
     def resolve_query(self, in_query=''):
+        """
+        Resolve the query string. If the method receives a non-empty string, keep it, otherwise build it
+        from the artist and title
+        :param in_query: A string containing the query string to use or an empty string
+        :return: The query string either echoed or constructed
+        """
         if in_query:
             return in_query
 
@@ -148,6 +169,11 @@ class MetaGetter(MusicTextGetter):
         return " ".join([self.artist, self.title])
 
     def expected_file_no(self, album_data) -> bool:
+        """
+        Determine if the number of tracks in the received album data matches the expected number
+        :param album_data: A dictionary containing album track info
+        :return: True if the album matches the expect number of tracks, otherwise False
+        """
         if self.match < 0:
             return True
 
@@ -157,14 +183,20 @@ class MetaGetter(MusicTextGetter):
         if self.match > 0:
             return self.match == count_to_match
 
-        f_count = len([f for f in pathlib.Path(self.dir).iterdir() if f.is_file() and str(f).split('.')[-1] in
-                       USE_FILE_EXTENSIONS[:-1]])
+        f_count = len([f for f in pathlib.Path(self.dir).iterdir() if f.is_file() and
+                       str(f).rsplit('.', maxsplit=1)[-1] in USE_FILE_EXTENSIONS[:-1]])
 
         return f_count == count_to_match
 
     def verify_album(self, in_album):
+        """
+        Check if the album/CD info we have is the one to use. We expect the artist, title and the number of
+        tracks to match
+        :param in_album: A dictionary containing album/CD info
+        :return: True if the album/CD is the correct one, otherwise False
+        """
         # Check if album artist and title actually match what we want ...
-        album_artist = self.get_artist(in_album.get('artists', dict()))
+        album_artist = self.get_artist(in_album.get('artists', {}))
         album_title = in_album.get('title', '')
 
         l_artist = self.artist if self.artist else ''
@@ -200,6 +232,11 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def last_dir_in_path(in_path: str):
+        """
+        Retrieve the last directory from the supplied path.
+        :param in_path: File/dir path from which to retrieve the last directory
+        :return: A string containing the retrieved directory name
+        """
         if in_path.endswith("/"):
             in_path = in_path[:-1]
 
@@ -207,6 +244,12 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def record_with_credits(in_records: list, analogue=True):
+        """
+        Find an album/CD/record with credits if available in the received list.
+        :param in_records: A list of dictionaries holding album/CD/record info
+        :param analogue: A flag indicating if analogue record is acceptable (track numbering A1, B3, etc.)
+        :return: A dictionary selected from the received list
+        """
         for record in in_records:
             if 'extraartists' in list(record.keys()):
                 if analogue:
@@ -222,10 +265,15 @@ class MetaGetter(MusicTextGetter):
 
                     return record
 
-        return next(iter(in_records), dict())
+        return next(iter(in_records), {})
 
     @staticmethod
     def get_artist(artists=None):
+        """
+        Get artist name as a string from the received list
+        :param artists: A list of strings
+        :return: A string containing the artist's name
+        """
         if not artists:
             return ''
 
@@ -233,6 +281,11 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def get_label(labels=None):
+        """
+        Get the record/CD/album label from the received list
+        :param labels: A list of strings containing label info
+        :return: A string containing the record label
+        """
         if not labels:
             return ''
 
@@ -240,10 +293,16 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def get_tracks(tracklist=None):
+        """
+        Build a list of dictionaries, each representing a music track. The main key of each of the dictionaries
+        is the track title and its value is dict with duration and credits (list), if available.
+        :param tracklist: A list of track info
+        :return: A list of dictionaries
+        """
         if not tracklist:
             return []
 
-        out_tracks = list()
+        out_tracks = []
         for track in tracklist:
             track_name = f"{track.get('position', '0')} {track.get('title', '')}"
 
@@ -254,8 +313,7 @@ class MetaGetter(MusicTextGetter):
                 out_tracks.append(track_name)
                 continue
 
-            track_dict = dict()
-            track_dict[track_name] = dict()
+            track_dict = {track_name: {}}
 
             if duration:
                 track_dict[track_name]['duration'] = duration
@@ -270,7 +328,12 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def get_album_credits(in_artists):
-        album_credits = list()
+        """
+        Get the album/CD/record credits from the received info.
+        :param in_artists: A list of info to use
+        :return: A list of strings, each representing an individual credit line
+        """
+        album_credits = []
 
         if not in_artists:
             return album_credits
@@ -289,10 +352,15 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def extract_series(record_series_dict):
+        """
+        Get info on album/CD/record series, which can include series name and category.
+        :param record_series_dict: A dictionary from which to build series info
+        :return: A string holding album/CD/record series information
+        """
         if not record_series_dict:
             return ""
 
-        out_series = list()
+        out_series = []
         for series in record_series_dict:
             name = series.get('name', '')
             cat = series.get('catno', '')
@@ -302,14 +370,19 @@ class MetaGetter(MusicTextGetter):
         return ", ".join(out_series)
 
     def build_yaml_dict(self, in_data=None) -> dict:
-        yml = dict()
+        """
+        Build a dictionary of album/CD/record info that can be saved to a .yaml file.
+        :param in_data: A dictionary containing the details of the album/CD/record to use.
+        :return: A dictionary
+        """
+        yml = {}
         if not in_data:
             return yml
 
         yml['title'] = in_data.get('title', '')
-        yml['series'] = self.extract_series(in_data.get('series', list()))
-        yml['artist'] = self.get_artist(in_data.get('artists', dict()))
-        yml['label'] = self.get_label(in_data.get('labels', dict()))
+        yml['series'] = self.extract_series(in_data.get('series', []))
+        yml['artist'] = self.get_artist(in_data.get('artists', {}))
+        yml['label'] = self.get_label(in_data.get('labels', {}))
         release_date = in_data.get('released', '')
         try:
             dt = datetime.strptime(release_date, '%Y-%m-%d')
@@ -326,9 +399,9 @@ class MetaGetter(MusicTextGetter):
             yml_year = re.sub(re.compile(re.sub(r'\d{4]', '', yml['released'])), '', yml['released'])
 
         yml['year'] = int(in_data.get('year', yml_year))
-        yml['genre'] = ", ".join(in_data.get('genres', list()))
-        yml['style'] = ", ".join(in_data.get('styles', list()))
-        yml['tracks'] = self.get_tracks(in_data.get('tracklist', list()))
+        yml['genre'] = ", ".join(in_data.get('genres', []))
+        yml['style'] = ", ".join(in_data.get('styles', []))
+        yml['tracks'] = self.get_tracks(in_data.get('tracklist', []))
         yml['credits'] = self.get_album_credits(in_data.get('extraartists', ''))
         yml['description'] = (self.get_text_data() or "") if self.is_jazz_genre(yml.get('genre', '')) else ""
 
@@ -336,6 +409,11 @@ class MetaGetter(MusicTextGetter):
 
     @staticmethod
     def is_jazz_genre(in_genre=''):
+        """
+        Check if the record is jazz.
+        :param in_genre: A string containing music genre info
+        :return: True if genre is "jazz", otherwise False
+        """
         if not in_genre:
             return False
 
@@ -348,6 +426,10 @@ class MetaGetter(MusicTextGetter):
         return False
 
     def get_data(self):
+        """
+        This method retrieves music metadata from discogs.com that can be saved to a YAML file.
+        :return: A dictionary that contains retrieved info on  an album/CD/record
+        """
         if self.release:
             response = self.dclient.get_release(id=self.release)
         else:
@@ -359,11 +441,11 @@ class MetaGetter(MusicTextGetter):
                                                token=self.cfg.get("access_token", "")
                                                )
 
-        if not response.get('results', list()):
+        if not response.get('results', []):
             response = self.dclient.get_search(q=self.query, token=self.cfg.get("access_token", ""))
 
-        results = response.get('results', list())
-        found_releases = list()
+        results = response.get('results', [])
+        found_releases = []
         for res in results:
             if res.get('type') not in ['release', 'master']:
                 continue
@@ -391,6 +473,11 @@ class MetaGetter(MusicTextGetter):
         return content_obj
 
     def write_yaml_file(self, file_data):
+        """
+        Write dict to a YAML file.
+        :param file_data: Data to write as a string
+        :return: Always True
+        """
         cur_dir = os.getcwd()
         dest_dir = self.dir
 
@@ -412,7 +499,7 @@ class MetaGetter(MusicTextGetter):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=script_description)
+    parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
     parser.add_argument("-a", "--artist", help="Artist nane",
                         type=str,
                         dest='artist',
@@ -465,8 +552,8 @@ if __name__ == '__main__':
 
     if not yml_data:
         log_it("info", __name__, "No data found")
-        exit(1)
+        sys.exit(1)
 
     mg.write_yaml_file(yml_data)
 
-    exit(0)
+    sys.exit(0)

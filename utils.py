@@ -1,28 +1,36 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
+"""
+This module contains utility functions
+"""
+
 ###############################################################################
 #
-# Copyright (C) 2022 Adam Bukolt.
+# Copyright (C) 2022-2024 Adam Bukolt.
 # All Rights Reserved.
 #
 ###############################################################################
 import itertools
-import json
 import os
 import re
-import time
+import logging
+
 from enum import Enum
 
 SEC_IN_DAY = 24 * 3600
-
 
 OUT_RELATIVE_PATH = '/../out/'
 
 
 def log_it(level='info', src_name=None, text=None):
-    import logging
-
+    """
+    Logger function
+    :param level: String specifying the log level
+    :param src_name: String containing the name of the logging module
+    :param text: A string containing the log message
+    :return: void
+    """
     logging.basicConfig(level=logging.DEBUG)
     logger_name = src_name if src_name else __name__
     log_writer = logging.getLogger(logger_name)
@@ -36,24 +44,15 @@ def log_it(level='info', src_name=None, text=None):
     do_log.get(level, log_writer.debug)(text)
 
 
-def timed_function(func):
-    def wrapped(*args, **kwargs):
-        start = time.perf_counter_ns()
-        result = func(*args, **kwargs)
-        log_it("info", __name__, f'running_time = {int((time.perf_counter_ns() - start) / 1000000)} ms')
-        return result
-    return wrapped
-
-
-def run_scandir(in_dir, ext):    # dir: str, ext: list
+def run_scandir(in_dir, ext):  # dir: str, ext: list
     """
     Find all the subdirectories and files in them. If ext is provided, list only files with matching extension
     :param in_dir: Input directory or which subidrectories are to be listed
     :param ext: File extension to match
     :return: A list of subdirectories and a list of files in them
     """
-    sub_dirs = list()
-    fn_files = list()
+    sub_dirs = []
+    fn_files = []
 
     for f in list(os.scandir(in_dir)):
         if f.is_dir():
@@ -73,46 +72,13 @@ def run_scandir(in_dir, ext):    # dir: str, ext: list
     return sub_dirs, fn_files
 
 
-def write_json_file(page_dict, filename, sort_keys=True):
-    cur_dir = os.getcwd()
-    dest_dir = cur_dir + OUT_RELATIVE_PATH
-
-    if not os.path.isdir(dest_dir):
-        os.mkdir(dest_dir)
-
-    filepath = os.path.join(dest_dir, filename)
-
-    with open(filepath, 'w') as out:
-        out.write(json.dumps(page_dict, indent=4, sort_keys=sort_keys, ensure_ascii=False))
-
-    return True
-
-
-def write_file(filename, file_data, dest_dir=None):
-    cur_dir = os.getcwd()
-
-    if not dest_dir:
-        dest_dir = cur_dir + OUT_RELATIVE_PATH
-
-    if not os.path.isdir(dest_dir):
-        os.mkdir(dest_dir)
-
-    filepath = os.path.join(dest_dir, filename)
-
-    if isinstance(file_data, dict):
-        with open(filepath, 'w') as out:
-            out.write(json.dumps(file_data, indent=4, sort_keys=True, ensure_ascii=False))
-    elif isinstance(file_data, str):
-        with open(filepath, 'w') as out:
-            out.write(file_data)
-    else:
-        with open(filepath, 'wb') as out:
-            out.write(file_data)
-
-    return True
-
-
 def read_file(filename, dest_dir=None):
+    """
+    Read specified file
+    :param filename: The name of the file to read
+    :param dest_dir: The directory where the file is
+    :return: The contents of the file as a String
+    """
     cur_dir = os.getcwd()
 
     if not dest_dir:
@@ -121,26 +87,19 @@ def read_file(filename, dest_dir=None):
     filepath = os.path.join(dest_dir, filename)
 
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, 'r', encoding="UTF-8") as f:
             return f.read().strip()
     except FileNotFoundError:
         print(f"Missing: {filepath}")
         return ''
 
 
-def read_json_file(filename, dest_dir=None):
-    cur_dir = os.getcwd()
-
-    if not dest_dir:
-        dest_dir = cur_dir + OUT_RELATIVE_PATH
-
-    filepath = os.path.join(dest_dir, filename)
-
-    with open(filepath, 'r') as f:
-        return json.load(f)
-
-
 def eval_bool_str(in_str):
+    """
+    Evaluate the received string as a Boolean
+    :param in_str: String to evaluate
+    :return: True or False
+    """
     # Test int and bool
     if isinstance(in_str, bool):
         return in_str
@@ -160,25 +119,6 @@ def eval_bool_str(in_str):
     return True
 
 
-def eval_none_value(in_str):
-    if not in_str:
-        return None
-
-    # int
-    if isinstance(in_str, int):
-        return str(in_str) if int(in_str) != 0 else None
-
-    # Boolean
-    if eval_bool_str(in_str):
-        return str(in_str)
-
-    # string
-    if in_str.lower() in ['null', 'none']:
-        return None
-
-    return in_str
-
-
 class BuildResult(Enum):
     """
     Class encapsulating possible Jenkins build result values as an enumeration.
@@ -192,7 +132,7 @@ class BuildResult(Enum):
     UNKNOWN = -1
 
     @property
-    def enum_members(self):
+    def enum_members(self):  # pylint: disable=missing-function-docstring
         return self._enum_members
 
     @enum_members.setter
@@ -230,14 +170,17 @@ class BuildResult(Enum):
         if in_str not in BuildResult.__members__:
             return BuildResult.UNKNOWN.value
 
-        return next(iter([member.value for name, member in BuildResult.__members__.items() if name == in_str]), None)
+        return next(iter(
+            [member.value for name, member in BuildResult.__members__.items() if name == in_str]),
+            None
+        )
 
 
 def contains(target, test_items):
     """
     This function checks if any elements from the received list are present in the target.
-    :param test_items: A list a string, list or dictionary (in which case only the keys are used); we want to know if
-    all or some of its elements are in target.
+    :param test_items: A list a string, list or dictionary (in which case only the keys
+    are used); we want to know if all or some of its elements are in target.
     :param target: Object (string, list, dictionary) to check for the presence of elements of test_items
     :return: True if at least one element from test_items is in target, otherwise False
     """
@@ -257,27 +200,18 @@ def contains(target, test_items):
     return len(list(test_set - target_set)) < len(test_items)
 
 
-def purge_duplicate_dict(in_list):
-    if not isinstance(in_list[0], dict):
-        return in_list
-
-    w_list = list(set([json.dumps(dt) for dt in in_list]))
-
-    return [json.loads(sd) for sd in w_list]
-
-
 def list_duplicate_items(in_list, dup_key=None, dup_val=None, select=None):
     """
-    List items that appear multiple times in the supplied list. If the list is a simple one, list the duplicate items
-    and their indices in the list. If the list is one of dictionaries, list items that have the same key along with
-    value of the specified other key.
+    List items that appear multiple times in the supplied list. If the list is a simple one, list the
+    duplicate items and their indices in the list. If the list is one of dictionaries, list items that
+    have the same key along with value of the specified other key.
     :param in_list: A list to check
     :param dup_key: A string indicating the key whose multiple occurrences are to be found
     :param dup_val: The key from each duplicate item whose value is to be recorded in the returned value
     :param select: The id of the key to use as a selection criterion
-    :return: A list of dictionaries, each with a duplicated key as key and a list of values (corresponding to the key
-    given by dup_val) if the input list is a list of dictionaries or a list of indices if the input list is a simple
-    list
+    :return: A list of dictionaries, each with a duplicated key as key and a list of values (corresponding to
+    the key given by dup_val) if the input list is a list of dictionaries or a list of indices if the input
+    list is a simple list
     """
     if not in_list or not isinstance(in_list, list):
         return []
@@ -287,13 +221,13 @@ def list_duplicate_items(in_list, dup_key=None, dup_val=None, select=None):
         work_list = [dct.get(dup_key) for dct in in_list if dct.get(select, True)]
 
         # multiples = list(set(['"{}"'.format(one) for one in work list if work_list.count(one) > 1]))
-        multiples = list(set([one for one in work_list if work_list.count(one) > 1]))
+        multiples = list({one for one in work_list if work_list.count(one) > 1})
         out_list = [{dct.get(dup_key): dct.get(dup_val)} for dct in in_list if dct.get(dup_key) in multiples]
 
         return [{name: [dct.get(name) for dct in out_list if name in dct.keys()]} for name in multiples]
 
     work_list = in_list
-    multiples = list(set([one for one in work_list if work_list.count(one) > 1]))
+    multiples = list({one for one in work_list if work_list.count(one) > 1})
 
     return [{list_item: [ix for ix, li in enumerate(in_list) if li == list_item]} for list_item in multiples]
 
