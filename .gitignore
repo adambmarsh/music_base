@@ -67,4 +67,5 @@ target/
 */oss_out/
 .env*
 .host_address
+pylintrc
 discogs.yml

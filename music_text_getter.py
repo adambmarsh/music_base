@@ -1,13 +1,19 @@
+"""
+Module to retrieve album description from a known source.
+"""
 import re
 
 from bs4 import BeautifulSoup, Tag
 from ruamel.yaml.scalarstring import PreservedScalarString as Pss
 
-from request_base import BaseRequest
-from utils import log_it
+from request_base import BaseRequest  # pylint: disable=import-error
+from utils import log_it  # pylint: disable=import-error
 
 
 class MusicTextGetter(BaseRequest):
+    """
+    Class to get music CD description.
+    """
 
     def __init__(self, url="", query_str="", album_artist="", album_title=""):
         self._album_title = self._album_artist = self._url = self._query_str = ""
@@ -22,7 +28,7 @@ class MusicTextGetter(BaseRequest):
         self.req_headers = {'Content-Type': 'application/json'}
 
     @property
-    def url(self):
+    def url(self):  # pylint: disable=missing-function-docstring
         return self._url
 
     @url.setter
@@ -30,7 +36,7 @@ class MusicTextGetter(BaseRequest):
         self._url = in_url
 
     @property
-    def album_title(self):
+    def album_title(self):  # pylint: disable=missing-function-docstring
         return self._album_title
 
     @album_title.setter
@@ -38,7 +44,7 @@ class MusicTextGetter(BaseRequest):
         self._album_title = in_title
 
     @property
-    def album_artist(self):
+    def album_artist(self):  # pylint: disable=missing-function-docstring
         return self._album_artist
 
     @album_artist.setter
@@ -46,7 +52,7 @@ class MusicTextGetter(BaseRequest):
         self._album_artist = in_artist
 
     @property
-    def search(self):
+    def search(self):  # pylint: disable=missing-function-docstring
         return self._query
 
     @search.setter
@@ -55,9 +61,20 @@ class MusicTextGetter(BaseRequest):
 
     @staticmethod
     def resolve_search(in_query_str=''):
+        """
+        Fix received query string by replacing spaces with dashes
+        :param in_query_str: Query string to fix
+        :return: Updated query string
+        """
         return re.sub(r' +', '-', in_query_str)
 
     def add_paragraph(self, in_obj, out_para):
+        """
+        Add a paragraph to a list in out_para.
+        :param in_obj: Object possibly containing a paragraph to add
+        :param out_para: Output list of paragraphs
+        :return: Modified output list of paragraphs
+        """
         if not isinstance(in_obj, Tag):
             return out_para
 
@@ -69,12 +86,23 @@ class MusicTextGetter(BaseRequest):
         return out_para
 
     def find_paragraphs(self, in_tags, out_paras):
+        """
+        Find paragraphs and add them ot an output list.
+        :param in_tags: Tags (list of dict) in which to find paragraphs
+        :param out_paras: Output lit of paragraphs
+        :return: Modified list of output paragraphs
+        """
         for tag in in_tags:
             out_paras = self.add_paragraph(tag, out_paras)
 
         return out_paras
 
     def validate_text_data(self, soup_to_check=None):
+        """
+        Check received beautiful soup object against the member variables title and artist for a match.
+        :param soup_to_check: A BeautifulSoup object to verify
+        :return: True indicates a match, False otherwise
+        """
         if not soup_to_check:
             return True
 
@@ -88,6 +116,11 @@ class MusicTextGetter(BaseRequest):
         return True
 
     def get_text_data(self, as_html_str=False):
+        """
+        Method to retrieve text data from a know source (JazzForum)
+        :param as_html_str: Flag indicating if HTML string is to be returned
+        :return: A string containing the retrieved text on success, otherwise an empty string
+        """
         page_url = self.url + self.search
         response = self._submit_request('GET', page_url, '')
 
@@ -103,7 +136,7 @@ class MusicTextGetter(BaseRequest):
                 return ""
 
             first_p = news_right.find_all("p", recursive=True)
-            all_p = list()
+            all_p = []
             all_p = self.find_paragraphs(first_p, all_p)
             out_text = []
 
@@ -118,6 +151,6 @@ class MusicTextGetter(BaseRequest):
 
         log_it('error', __name__, f"Failed to get page content from {self.url}.")
         log_it('error', __name__,
-               "Get content response:\n{}: {}\n".format(str(response.status_code), response.reason))
+               f"Get content response:\n{str(response.status_code)}: {response.reason}\n")
 
         return ""

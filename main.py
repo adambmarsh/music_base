@@ -1,19 +1,19 @@
+"""
+Test module
+"""
 # Django specific settings
 import os
 
+# Your application specific imports
 from django.core.wsgi import get_wsgi_application
+
+from orm.models import Album  # NOQA  # pylint: disable=unused-import, disable=import-error
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
-
 application = get_wsgi_application()
 
-# Your application specific imports
-from orm.models import Album  # NOQA
-
 if __name__ == '__main__':
-    album = None
-
     # Add a record
     if not Album.objects.filter(artist="Yes"):  # NOQA
         album = Album(title="Test", artist="Yes", comment="Test comment", label="Polydor")
