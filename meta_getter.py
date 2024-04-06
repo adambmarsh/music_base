@@ -37,7 +37,7 @@ class MetaGetter(MusicTextGetter):
         self.year = year
         self.artist, self.title = self.resolve_artist_and_title(artist, title)
         self.genre = genre
-        self.query = self.resolve_query(query)
+        self.query = query if query else ""
         script_dir = os.path.dirname(os.path.realpath(__file__))
         self.cfg = MusicMeta(base_dir=script_dir).read_yaml(os.path.join(script_dir, "discogs.yml"))
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
