@@ -15,14 +15,15 @@ class MusicTextGetter(BaseRequest):
     Class to get music CD description.
     """
 
-    def __init__(self, url="", query_str="", album_artist="", album_title=""):
+    def __init__(self, url="", query_str=None, album_artist="", album_title=""):
         self._album_title = self._album_artist = self._url = self._query_str = ""
 
         self.data = ""
         self.url = url if url else "https://jazzforum.com.pl/main/cd/"
         self.album_artist = album_artist
         self.album_title = album_title
-        self.search = self.resolve_search(query_str if query_str else self.album_title)
+        self.search = query_str if query_str is not None else self.resolve_search(query_str if query_str else
+                                                                                  self.album_title)
 
         super().__init__("", "")
         self.req_headers = {'Content-Type': 'application/json'}
