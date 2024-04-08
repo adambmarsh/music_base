@@ -17,7 +17,7 @@ Make sure the audio files have names composed of track numbers and titles as in 
 See example_yml dir in https://github.com/adambmarsh/music_base
 """
 
-NON_ALPHA_PATTERN = r'[?!\'+\-:;,._()\[\]~@&%<>= ]+'
+NON_ALPHA_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>= ]+'
 
 
 class TagSetter:
@@ -29,11 +29,13 @@ class TagSetter:
         self._dir = ''
         self._yml_file = ''
         self._song_tags = {}
+        self._audio_file_ext = ''
 
         self.dir = in_dir
         self.yml_file = in_yml if in_yml else (self.last_dir_in_path(self.dir) + ".yml")
         self.yml = MusicMeta(base_dir=self.dir).read_yaml(os.path.join(self.dir, self.yml_file))
         self.song_tags = {}
+        self.audio_file_ext = ''
 
     @property
     def dir(self):  # pylint: disable=missing-function-docstring
@@ -50,6 +52,14 @@ class TagSetter:
     @yml_file.setter
     def yml_file(self, in_yml):
         self._yml_file = in_yml
+
+    @property
+    def audio_file_ext(self):  # pylint: disable=missing-function-docstring
+        return self._audio_file_ext
+
+    @audio_file_ext.setter
+    def audio_file_ext(self, in_ext):
+        self._audio_file_ext = in_ext
 
     @staticmethod
     def last_dir_in_path(in_path: str):
@@ -93,7 +103,7 @@ class TagSetter:
     def get_track_info_from_yml(self, in_key, in_number: str):
         """
         Get audio track (song) info from YAML (file).
-        :param in_key: name of track
+        :param in_key: base name of track (without number and file ext)
         :param in_number: number of track
         :return: Either a dict representing the track or an empty dict
         """
@@ -101,19 +111,20 @@ class TagSetter:
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
-            if int(in_number) != int(track_num):
+            if in_number and int(in_number) != int(track_num):
                 continue
 
             # Clean track name of all punctuation, spaces and digits
             track_key = self.clean_non_alnum(work_key, track_num)
+            clean_in_key = self.clean_non_alnum(in_key, in_number)
 
-            lkey = in_key
+            lkey = clean_in_key
             rkey = track_key
 
             # Order keys, shorter first (lkey):
             if len(in_key) > len(track_key):
                 lkey = track_key
-                rkey = in_key
+                rkey = clean_in_key
 
             if lkey in rkey or lkey.lower() in rkey.lower():
                 return track
@@ -165,18 +176,22 @@ class TagSetter:
 
         return in_tags
 
-    def track_tags_from_yml(self, file_name) -> dict:
+    def track_tags_from_yml(self, file_name) -> (dict, int):
         """
         Retrieve music track tags from a YAML file
         :param file_name: Name of the file
-        :return: A dict of track tags
+        :return: A dict of track tags and a track number is the file does not have it
         """
-        rx_pattern = re.compile('.(' + '|'.join(USE_FILE_EXTENSIONS) + ')$')
-        file_base = re.sub(rx_pattern, '', file_name)
+        file_base, file_ext = os.path.splitext(file_name)
         base_name = re.sub(r'^\d{,3}', '', file_base)
         track_no = file_base[:len(base_name) * -1]
-
+        bare_ext = file_ext.strip('.')
         tags = {}
+
+        if bare_ext not in USE_FILE_EXTENSIONS:
+            return tags
+
+        self.audio_file_ext = bare_ext if not self.audio_file_ext else self.audio_file_ext
         genre = self.yml.get('genre', '')
 
         if genre:
@@ -184,18 +199,21 @@ class TagSetter:
 
         tags['album'] = self.yml.get('title', '')
         tags['year'] = self.yml.get('year', '')
-        tags['tracknumber'] = track_no
         tags = self.set_artist_composer(genre, tags)
 
         # Clean file base name of all punctuation, spaces and digits
-        track_info = self.get_track_info_from_yml(self.clean_non_alnum(base_name, track_no), track_no)
-        work_title = next(iter(track_info.keys()), '')[len(track_no):].strip() \
-            if isinstance(track_info, dict) else track_info[len(track_no):]
+        track_info = self.get_track_info_from_yml(base_name, track_no)
+        work_title = next(iter(track_info.keys()), '').strip() \
+            if isinstance(track_info, dict) else track_info
 
-        # Strip only initial non-alnum and underscores from title:
-        tags['title'] = re.sub(r'^' + NON_ALPHA_PATTERN, '', work_title)
+        if not track_no:
+            found = re.search(r'^[0-9_]+', work_title)
+            track_no = int(track_no if not found else work_title[found.start(): found.end()].strip('_'))
 
-        return tags
+        tags['tracknumber'] = track_no
+        tags['title'] = re.sub(r'^[0-9_]+', '', work_title)
+
+        return tags, track_no
 
     def set_tags(self):
         """
@@ -206,7 +224,7 @@ class TagSetter:
 
         for f_name in file_names:
             f = music_tag.load_file(os.path.join(self.dir, f_name))
-            track_tags = self.track_tags_from_yml(f_name)
+            track_tags, track_num = self.track_tags_from_yml(f_name)
             track_tags['totaltracks'] = len(file_names)
 
             for track_tag, tag_value in track_tags.items():
@@ -217,6 +235,11 @@ class TagSetter:
                 f[track_tag] = str(tag_value)
 
             f.save()
+
+            if not f_name.startswith(str(track_num)):
+                source_path = os.path.join(self.dir, f"{f_name}")
+                dest_path = os.path.join(self.dir, f"{track_num:02d}_{f_name}")
+                os.rename(src=source_path, dst=dest_path)
 
         return True
 
