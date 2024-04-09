@@ -180,7 +180,7 @@ class TagSetter:
         """
         Retrieve music track tags from a YAML file
         :param file_name: Name of the file
-        :return: A dict of track tags and a track number is the file does not have it
+        :return: A tuple - a dict of track tags and a track number
         """
         file_base, file_ext = os.path.splitext(file_name)
         base_name = re.sub(r'^\d{,3}', '', file_base)
@@ -189,7 +189,7 @@ class TagSetter:
         tags = {}
 
         if bare_ext not in USE_FILE_EXTENSIONS:
-            return tags
+            return tags, track_no
 
         self.audio_file_ext = bare_ext if not self.audio_file_ext else self.audio_file_ext
         genre = self.yml.get('genre', '')
@@ -203,8 +203,7 @@ class TagSetter:
 
         # Clean file base name of all punctuation, spaces and digits
         track_info = self.get_track_info_from_yml(base_name, track_no)
-        work_title = next(iter(track_info.keys()), '').strip() \
-            if isinstance(track_info, dict) else track_info
+        work_title = next(iter(track_info.keys()), '').strip() if isinstance(track_info, dict) else track_info
 
         if not track_no:
             found = re.search(r'^[0-9_]+', work_title)
