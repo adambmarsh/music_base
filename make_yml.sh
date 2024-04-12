@@ -39,14 +39,16 @@ Usage() {
     echo "   {artist_name}_-_[{year}]_{album_title}                                                    "
     echo "                                                                                             "
     echo "Usage:                                                                                       "
-    echo "    -d target directory containing audio files -- the output file is to be placed there      " 
+    echo "    -d target directory containing audio files -- the output file is to be placed there      "
+    echo "    -i release ID                                                                            "
+    echo "    -c country of release (use quotes)                                                                            "
     echo "    -m (optional) indicates the number of tracks on the album, possible values:              "
     echo "       0 - the underlying program counts the audio files in -d to identify the correct DB    "
     echo "           record                                                                            "
     echo "       1 or higher - the expected number of tracks (files in -d are not counted)             "
     echo "       absent (parameter is not provided) - the number of files is not checked               "
     echo "       directory.                                                                            "
-    echo "    -r search query, if not provided, the program crreates it from the name of -d (artist,   "
+    echo "    -r search query, if not provided, the program creates it from the name of -d (artist,   "
     echo "       title)                                                                                "
     echo "    -a artist's name (band name) surrounded by double quotes; if absent, extracted from the  "
     echo "       name of -d                                                                            "
@@ -87,6 +89,14 @@ do
             artist="$2"
             shift
             ;;
+        -c|--country)
+            country="$2"
+            shift
+            ;;
+        -i|--id)
+            release_id="$2"
+            shift
+            ;;
         -t|--title)
             title="$2"
             shift
@@ -117,4 +127,4 @@ fi
 
 cur_dir=$(pwd)
 
-source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -m "$to_match" -a "$artist" -t "$title" -r "$query_str" && deactivate && cd "$cur_dir" || exit
+source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -c "$country" -m "$to_match" -a "$artist" -i "$release_id" -t "$title" -r "$query_str" && deactivate && cd "$cur_dir" || exit
