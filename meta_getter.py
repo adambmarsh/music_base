@@ -24,8 +24,10 @@ class MetaGetter(MusicTextGetter):
     This class encapsulates functionality to retrieve music metadata.
     """
 
-    def __init__(self, dest_dir="", artist="", genre="", query="", title="", release_id="", year=None, match=-1):
-        self._title = self.genre = self._artist = self._dir = self._data = self._release = self._query = ""
+    def __init__(self, dest_dir="", artist="", genre="", country="", query="", title="", release_id="",
+                 year=None, match=-1):
+        self._title = self.genre = self._artist = self._country = self._dir = self._data = self._release = \
+            self._query = ""
         self._cfg = {}
         self._year = None
         self._match = -1
@@ -35,6 +37,7 @@ class MetaGetter(MusicTextGetter):
         self.data = ""
         self.dir = dest_dir
         self.year = year
+        self.country = country
         self.artist, self.title = self.resolve_artist_and_title(artist, title)
         self.genre = genre
         self.query = query if query else ""
@@ -59,6 +62,14 @@ class MetaGetter(MusicTextGetter):
     @match.setter
     def match(self, in_match):
         self._match = int(in_match)
+
+    @property
+    def country(self):  # pylint: disable=missing-function-docstring
+        return self._country
+
+    @country.setter
+    def country(self, in_country):
+        self._country = in_country
 
     @property
     def dir(self):  # pylint: disable=missing-function-docstring
@@ -351,6 +362,20 @@ class MetaGetter(MusicTextGetter):
         return album_credits
 
     @staticmethod
+    def get_album_notes(in_notes=""):
+        """
+        Get album notes as an array, if available.
+        :param in_notes: Notes retrieved from discogs
+        :return: An array of strings on success, otherwise an empty array
+        """
+        if not in_notes:
+            return []
+
+        work_notes = re.split(r'[\r\n]+', in_notes)
+
+        return [note for note in work_notes if note]
+
+    @staticmethod
     def extract_series(record_series_dict):
         """
         Get info on album/CD/record series, which can include series name and category.
@@ -404,6 +429,7 @@ class MetaGetter(MusicTextGetter):
         yml['tracks'] = self.get_tracks(in_data.get('tracklist', []))
         yml['credits'] = self.get_album_credits(in_data.get('extraartists', ''))
         yml['description'] = (self.get_text_data() or "") if self.is_jazz_genre(yml.get('genre', '')) else ""
+        yml['notes'] = self.get_album_notes(in_data.get('notes', ""))
 
         return yml
 
@@ -437,11 +463,15 @@ class MetaGetter(MusicTextGetter):
                                                artist=self.artist,
                                                title=self.title,
                                                year=self.year,
+                                               country=self.country,
                                                q=self.query,
                                                token=self.cfg.get("access_token", "")
                                                )
 
-        if not response.get('results', []):
+        if response and isinstance(response, dict) and 'results' not in response.keys():
+            response['type'] = 'release'
+            response = {'results': [response]}
+        elif not response.get('results', []):
             response = self.dclient.get_search(q=self.query, token=self.cfg.get("access_token", ""))
 
         results = response.get('results', [])
@@ -504,6 +534,10 @@ if __name__ == '__main__':
                         type=str,
                         dest='artist',
                         required=False)
+    parser.add_argument("-c", "--country", help="Country of release",
+                        type=str,
+                        dest='country',
+                        required=False)
     parser.add_argument("-d", "--directory", help="Full path to the directory containing audio files to which to "
                                                   "apply tags",
                         type=str,
@@ -522,13 +556,13 @@ if __name__ == '__main__':
                         type=str,
                         dest='query',
                         required=False)
-    parser.add_argument("-t", "--title", help="Album title.",
-                        type=str,
-                        dest='title',
-                        required=False)
     parser.add_argument("-i", "--release_id", help="Numeric identifier of the release (Discogs)",
                         type=str,
                         dest='release_id',
+                        required=False)
+    parser.add_argument("-t", "--title", help="Album title.",
+                        type=str,
+                        dest='title',
                         required=False)
     parser.add_argument("-y", "--year", help="Numeric year (release year)",
                         type=int,
