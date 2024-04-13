@@ -17,7 +17,7 @@ Make sure the audio files have names composed of track numbers and titles as in 
 See example_yml dir in https://github.com/adambmarsh/music_base
 """
 
-NON_ALPHA_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>= ]+'
+NON_ALNUM_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>= ]+'
 
 
 class TagSetter:
@@ -95,10 +95,11 @@ class TagSetter:
         :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
         :return: The received string after clean-up
         """
+        work_str = re.sub(NON_ALNUM_PATTERN, '', in_str)
         if not in_num_str:
-            return re.sub(NON_ALPHA_PATTERN, '', in_str)
+            return work_str
 
-        return re.sub(re.compile('^' + in_num_str), '', re.sub(r'[?!\'\-:;,._()= ]+', '', in_str))
+        return re.sub(re.compile('^' + in_num_str), '', work_str)
 
     def get_track_info_from_yml(self, in_key, in_number: str):
         """
@@ -107,6 +108,8 @@ class TagSetter:
         :param in_number: number of track
         :return: Either a dict representing the track or an empty dict
         """
+        clean_in_key = self.clean_non_alnum(in_key, in_number)
+
         for track in self.yml.get('tracks'):
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
@@ -116,8 +119,6 @@ class TagSetter:
 
             # Clean track name of all punctuation, spaces and digits
             track_key = self.clean_non_alnum(work_key, track_num)
-            clean_in_key = self.clean_non_alnum(in_key, in_number)
-
             lkey = clean_in_key
             rkey = track_key
 
