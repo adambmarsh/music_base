@@ -118,13 +118,13 @@ class TagSetter:
                 continue
 
             # Clean track name of all punctuation, spaces and digits
-            track_key = self.clean_non_alnum(work_key, track_num)
+            clean_track_key = self.clean_non_alnum(work_key, track_num)
             lkey = clean_in_key
-            rkey = track_key
+            rkey = clean_track_key
 
             # Order keys, shorter first (lkey):
-            if len(in_key) > len(track_key):
-                lkey = track_key
+            if len(clean_in_key) > len(clean_track_key):
+                lkey = clean_track_key
                 rkey = clean_in_key
 
             if lkey in rkey or lkey.lower() in rkey.lower():
