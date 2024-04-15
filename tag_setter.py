@@ -110,8 +110,10 @@ class TagSetter:
         """
         clean_in_key = self.clean_non_alnum(in_key, in_number)
 
+        yml_titles = []
         for track in self.yml.get('tracks'):
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
+            yml_titles.append(work_key)
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
             if in_number and int(in_number) != int(track_num):
@@ -130,6 +132,7 @@ class TagSetter:
             if lkey in rkey or lkey.lower() in rkey.lower():
                 return track
 
+        log_it("error", "get_track_info_from_yml", f"{repr(in_key)} not in {repr(yml_titles)}")
         return {}
 
     def set_artist_composer(self, in_genre: str, in_tags: dict) -> dict:
@@ -208,7 +211,12 @@ class TagSetter:
 
         if not track_no:
             found = re.search(r'^[0-9_]+', work_title)
-            track_no = int(track_no if not found else work_title[found.start(): found.end()].strip('_'))
+
+            try:
+                track_no = int(track_no if not found else work_title[found.start(): found.end()].strip('_'))
+            except ValueError as ve:
+                log_it("error", "track_tags_from_yml", {repr(ve)})
+                sys.exit(1)
 
         tags['tracknumber'] = track_no
         tags['title'] = re.sub(r'^[0-9_]+', '', work_title)
