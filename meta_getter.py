@@ -355,7 +355,7 @@ class MetaGetter(MusicTextGetter):
             tracks = art.get('tracks', None)
 
             if tracks:
-                credit_line = f"{credit_line} (tracks {tracks}"
+                credit_line = f"{credit_line} (tracks {tracks})"
 
             album_credits.append(credit_line)
 
