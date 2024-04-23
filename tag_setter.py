@@ -30,12 +30,14 @@ class TagSetter:
         self._yml_file = ''
         self._song_tags = {}
         self._audio_file_ext = ''
+        self._track_num_in_filename = False
 
         self.dir = in_dir
         self.yml_file = in_yml if in_yml else (self.last_dir_in_path(self.dir) + ".yml")
         self.yml = MusicMeta(base_dir=self.dir).read_yaml(os.path.join(self.dir, self.yml_file))
         self.song_tags = {}
         self.audio_file_ext = ''
+        self.track_num_in_filename = False
 
     @property
     def dir(self):  # pylint: disable=missing-function-docstring
@@ -60,6 +62,14 @@ class TagSetter:
     @audio_file_ext.setter
     def audio_file_ext(self, in_ext):
         self._audio_file_ext = in_ext
+
+    @property
+    def track_num_in_filename(self):  # pylint: disable=missing-function-docstring
+        return self._track_num_in_filename
+
+    @track_num_in_filename.setter
+    def track_num_in_filename(self, in_flag):
+        self._track_num_in_filename = in_flag
 
     @staticmethod
     def last_dir_in_path(in_path: str):
@@ -180,6 +190,27 @@ class TagSetter:
 
         return in_tags
 
+    @staticmethod
+    def extract_track_num_from_file_name(in_name, in_number=""):
+        """
+        Extract track number
+        :param in_name: A string representing a file name
+        :param in_number: A string containing a track number
+        :return:The track number as int if extracted, -1 on error
+        """
+        if in_number and (in_number.strip()).isdigit():
+            return int(in_number)
+
+        found = re.search(r'^[0-9]{1,3}[_ ]', in_name)
+
+        try:
+            track_no = int(in_number if not found else in_name[found.start(): found.end()].strip('_'))
+        except ValueError as ve:
+            log_it("error", "extract_track_num_from_file_name", {repr(ve)})
+            return -1
+
+        return track_no
+
     def track_tags_from_yml(self, file_name) -> (dict, int):
         """
         Retrieve music track tags from a YAML file
@@ -187,8 +218,8 @@ class TagSetter:
         :return: A tuple - a dict of track tags and a track number
         """
         file_base, file_ext = os.path.splitext(file_name)
-        base_name = re.sub(r'^\d{,3}', '', file_base)
-        track_no = file_base[:len(base_name) * -1]
+        base_name = re.sub(r'^\d{,3}[_ ]', '', file_base) if self.track_num_in_filename else file_base
+        track_no = file_base[:len(base_name) * -1].strip(" _")
         bare_ext = file_ext.strip('.')
         tags = {}
 
@@ -208,20 +239,41 @@ class TagSetter:
         # Clean file base name of all punctuation, spaces and digits
         track_info = self.get_track_info_from_yml(base_name, track_no)
         work_title = next(iter(track_info.keys()), '').strip() if isinstance(track_info, dict) else track_info
+        track_no = self.extract_track_num_from_file_name(work_title)
 
-        if not track_no:
-            found = re.search(r'^[0-9_]+', work_title)
-
-            try:
-                track_no = int(track_no if not found else work_title[found.start(): found.end()].strip('_'))
-            except ValueError as ve:
-                log_it("error", "track_tags_from_yml", {repr(ve)})
-                sys.exit(1)
+        if track_no == -1:
+            sys.exit(1)
 
         tags['tracknumber'] = track_no
         tags['title'] = re.sub(r'^[0-9_]+', '', work_title)
 
         return tags, track_no
+
+    def files_start_with_track_num(self, in_file_names):
+        """
+        Check if all files start with a track number and set a flag on the class. The numbers must be
+        consecutive.
+        :param in_file_names:
+        :return: True if numbers start the file names, otherwise False
+        """
+        numbered = [f for f in in_file_names if re.match(r'^\d{1,3}[_ ]', f)]
+
+        if not numbered:
+            return False
+
+        if len(numbered) != len(in_file_names):
+            return False
+
+        track_nos = [self.extract_track_num_from_file_name(f) for f in in_file_names]
+
+        if track_nos and len(str(track_nos[0])) > 2:
+            track_nos = [int(str(tn)[1:]) for tn in track_nos]
+
+        maximum = max(track_nos)
+
+        if sum(track_nos) == maximum * (maximum + 1) / 2:
+            return True
+        return False
 
     def set_tags(self):
         """
@@ -229,6 +281,9 @@ class TagSetter:
         :return: Always True
         """
         file_names = self.get_audio_file_list()
+
+        # Check if digits  start file names, if all files start with a number, assume it is the track number.
+        self.track_num_in_filename = self.files_start_with_track_num(file_names)
 
         for f_name in file_names:
             f = music_tag.load_file(os.path.join(self.dir, f_name))
@@ -244,7 +299,7 @@ class TagSetter:
 
             f.save()
 
-            if not f_name.startswith(str(track_num)):
+            if not self.track_num_in_filename:
                 source_path = os.path.join(self.dir, f"{f_name}")
                 dest_path = os.path.join(self.dir, f"{track_num:02d}_{f_name}")
                 os.rename(src=source_path, dst=dest_path)
