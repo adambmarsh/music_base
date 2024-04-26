@@ -126,7 +126,7 @@ class TagSetter:
             yml_titles.append(work_key)
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
-            if in_number and int(in_number) != int(track_num):
+            if self.track_num_in_filename and int(in_number) != int(track_num):
                 continue
 
             # Clean track name of all punctuation, spaces and digits
@@ -139,7 +139,7 @@ class TagSetter:
                 lkey = clean_track_key
                 rkey = clean_in_key
 
-            if lkey in rkey or lkey.lower() in rkey.lower():
+            if lkey in rkey and lkey.lower() == rkey.lower():
                 return track
 
         log_it("error", "get_track_info_from_yml", f"{repr(in_key)} not in {repr(yml_titles)}")
@@ -219,7 +219,7 @@ class TagSetter:
         """
         file_base, file_ext = os.path.splitext(file_name)
         base_name = re.sub(r'^\d{,3}[_ ]', '', file_base) if self.track_num_in_filename else file_base
-        track_no = file_base[:len(base_name) * -1].strip(" _")
+        track_no = file_base[:len(base_name) * -1].strip(" _") if self.track_num_in_filename else ""
         bare_ext = file_ext.strip('.')
         tags = {}
 
