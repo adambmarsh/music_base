@@ -118,7 +118,7 @@ class TagSetter:
         :param in_number: number of track
         :return: Either a dict representing the track or an empty dict
         """
-        clean_in_key = self.clean_non_alnum(in_key, in_number)
+        clean_in_key = self.clean_non_alnum(in_key, in_number).lower()
 
         yml_titles = []
         for track in self.yml.get('tracks'):
@@ -130,7 +130,7 @@ class TagSetter:
                 continue
 
             # Clean track name of all punctuation, spaces and digits
-            clean_track_key = self.clean_non_alnum(work_key, track_num)
+            clean_track_key = self.clean_non_alnum(work_key, track_num).lower()
             lkey = clean_in_key
             rkey = clean_track_key
 
@@ -139,7 +139,7 @@ class TagSetter:
                 lkey = clean_track_key
                 rkey = clean_in_key
 
-            if lkey in rkey and lkey.lower() == rkey.lower():
+            if lkey == rkey:
                 return track
 
         log_it("error", "get_track_info_from_yml", f"{repr(in_key)} not in {repr(yml_titles)}")
