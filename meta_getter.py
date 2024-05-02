@@ -24,13 +24,13 @@ class MetaGetter(MusicTextGetter):
     This class encapsulates functionality to retrieve music metadata.
     """
 
-    def __init__(self, dest_dir="", artist="", genre="", country="", query="", title="", release_id="",
-                 year=None, match=-1):
+    def __init__(self, dest_dir="", artist="", genre="", country="", query="", title="", release_id="", url="",
+                 year=None, match=0):
         self._title = self.genre = self._artist = self._country = self._dir = self._data = self._release = \
-            self._query = ""
+            self._query = self._org_data_url = ""
         self._cfg = {}
         self._year = None
-        self._match = -1
+        self._match = 0
 
         self.release = release_id
         self.match = match
@@ -46,6 +46,7 @@ class MetaGetter(MusicTextGetter):
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
 
         super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
+        self.org_data_url = self.parse_url(url)
 
     @property
     def data(self):  # pylint: disable=missing-function-docstring
@@ -86,6 +87,14 @@ class MetaGetter(MusicTextGetter):
     @release.setter
     def release(self, in_release):
         self._release = in_release
+
+    @property
+    def org_data_url(self):  # pylint: disable=missing-function-docstring
+        return self._org_data_url
+
+    @org_data_url.setter
+    def org_data_url(self, in_url):
+        self._org_data_url = in_url
 
     @property
     def year(self):  # pylint: disable=missing-function-docstring
@@ -135,6 +144,29 @@ class MetaGetter(MusicTextGetter):
     def query(self, in_query):
         self._query = in_query
 
+    def parse_url(self, in_url=""):
+        """
+        Parse received URL to extract release_id, artist and title.
+        Release_id is a sequence of digits,
+        :param in_url: e.g. 'https://www.discogs.com/release/15639198-Art-Blakey-The-Jazz-Messengers-Just-Coolin'
+        or '15639198-Art-Blakey-The-Jazz-Messengers-Just-Coolin'
+        :return: The received URL (after populating `release`, `title`, `author` (if possible)
+        """
+        if not in_url:
+            return ""
+
+        split_on_str = 'release/'
+        work_url = in_url.split(split_on_str)[-1]
+        self.release = next(iter(work_url.split('-')), '')
+        self.release = self.release if self.release.isdigit() else ''
+
+        work_url = work_url[len(self.release) + 1:]
+        work_title = self.title.replace('+?!.,:;_[](){}', self.title).replace(' ', '-')
+        work_artist = work_url[:work_url.lower().index(work_title.lower())].strip('-')
+        self.artist = work_artist
+        self.title = work_title
+        return in_url
+
     def resolve_artist_and_title(self, in_artist='', in_title=''):
         """
         Get artist and title. If they are supplied by the arguments, keep them, otherwise get them from
@@ -179,7 +211,7 @@ class MetaGetter(MusicTextGetter):
 
         return " ".join([self.artist, self.title])
 
-    def expected_file_no(self, album_data) -> bool:
+    def expected_audio_file_count(self, album_data) -> bool:
         """
         Determine if the number of tracks in the received album data matches the expected number
         :param album_data: A dictionary containing album track info
@@ -199,6 +231,19 @@ class MetaGetter(MusicTextGetter):
 
         return f_count == count_to_match
 
+    @staticmethod
+    def clean_set_from_str(in_str, str_separator=' '):
+        """
+        Convert a string to a set, leaving out any empty elements.
+        :param in_str: A string to convert
+        :param str_separator: Sepearator to use to break up the string
+        :return: A set on success, otherwise an empty set
+        """
+        if not in_str:
+            return set()
+
+        return {i for i in set(re.sub(r'\W+', ' ', in_str.lower()).split(str_separator)) if i}
+
     def verify_album(self, in_album):
         """
         Check if the album/CD info we have is the one to use. We expect the artist, title and the number of
@@ -217,14 +262,15 @@ class MetaGetter(MusicTextGetter):
             l_artist = album_artist
             r_artist = self.artist
 
-        l_artist_set = set(re.sub(r'\W+', ' ', l_artist.lower()).split(' '))
-        r_artist_set = set(re.sub(r'\W+', ' ', r_artist.lower()).split(' '))
+        l_artist_set = self.clean_set_from_str(l_artist)
+        r_artist_set = self.clean_set_from_str(r_artist)
 
         if not l_artist_set.intersection(r_artist_set):
             return False
 
-        title_set = set(re.sub(r'\W+', ' ', self.title.lower()).split(' '))
-        album_title_set = set(re.sub(r'\W+', ' ', album_title.lower()).split(' '))
+        title_set = self.clean_set_from_str(self.title)
+        album_title_set = self.clean_set_from_str(album_title)
+
         l_title_set = title_set
         r_title_set = album_title_set
 
@@ -239,7 +285,7 @@ class MetaGetter(MusicTextGetter):
                 set(re.split(r'\W', album_artist.lower() + " " + album_title.lower()))):
             return False
 
-        return self.expected_file_no(in_album)
+        return self.expected_audio_file_count(in_album)
 
     @staticmethod
     def last_dir_in_path(in_path: str):
@@ -547,10 +593,12 @@ if __name__ == '__main__':
                         type=str,
                         dest='genre',
                         required=False)
-    parser.add_argument("-m", "--match", help="Number of audio files the located album should match",
+    parser.add_argument("-m", "--match", help="Number of audio files the located album should match"
+                                              ", deafult is 0 (match count of audio file in --directory; -1 means"
+                                              " do not check",
                         type=str,
                         dest='match',
-                        default=-1,
+                        default=0,
                         required=False)
     parser.add_argument("-r", "--query", help="Search string, for example artist's name and album title",
                         type=str,
@@ -563,6 +611,10 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--title", help="Album title.",
                         type=str,
                         dest='title',
+                        required=False)
+    parser.add_argument("-u", "--url", help="URL of discogs page.",
+                        type=str,
+                        dest='url',
                         required=False)
     parser.add_argument("-y", "--year", help="Numeric year (release year)",
                         type=int,
@@ -578,6 +630,7 @@ if __name__ == '__main__':
         genre=args.genre,
         artist=args.artist,
         release_id=args.release_id,
+        url=args.url,
         year=args.year if args.year else None,
         match=args.match
     )
