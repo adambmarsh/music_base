@@ -44,12 +44,12 @@ Usage() {
     echo "    --help"
 }
 
-if [[ $# -lt 1 ]]; then
-    echo "Insufficient arguments ... "
-    echo ""
-    Usage
-    exit 1
-fi
+# if [[ $# -lt 1 ]]; then
+#     echo "Insufficient arguments ... "
+#     echo ""
+#     Usage
+#     exit 1
+# fi
 
 
 while [[ $# -gt 0 ]];
@@ -74,7 +74,7 @@ done
 if [[ -d "$idir" ]]; then
     input_dir="$idir"
 else
-    input_dir=""
+    input_dir=$(pwd)
 fi
 
 if [[ -n "$iyaml" ]] && [[ ! -f $input_dir/$iyaml ]]; then
