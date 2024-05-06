@@ -161,7 +161,8 @@ class MetaGetter(MusicTextGetter):
         self.release = self.release if self.release.isdigit() else ''
 
         work_url = work_url[len(self.release) + 1:]
-        work_title = self.title.replace('+?!.,:;_[](){}', self.title).replace(' ', '-')
+        work_title = self.title.replace('+?!.,:;_[](){}', '').replace(' ', '-')
+        work_title = work_title.replace('\'', '')
         work_artist = work_url[:work_url.lower().index(work_title.lower())].strip('-')
         self.artist = work_artist
         self.title = work_title
