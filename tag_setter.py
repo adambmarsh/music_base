@@ -7,6 +7,7 @@ import re
 import sys
 
 import music_tag
+from mutagen.id3 import ID3
 
 from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
 from utils import log_it  # pylint: disable=import-error
@@ -275,6 +276,53 @@ class TagSetter:
             return True
         return False
 
+    def clear_unwanted_tags_flac(self, file_name):
+        """
+        Clear unwanted tags in the audio file.
+        :param file_name: A string containing the name of the audio file (flac, mp3, etc.)
+        :return: Modified audio file object on success, otherwise unchanged audio file object
+        """
+        file_object = music_tag.load_file(os.path.join(self.dir, file_name))
+
+        unwanted = [
+            'language', 'encoder', 'minor_version', 'major_band',
+            'compatible_bands', 'replaygain_track_gain', 'replaygain_track_peak',
+            'itunes_cddb_1', 'PUBLISHER', 'RECORDED-BY', 'GRACENOTEFILEID', 'GRACENOTEEXTDATA', 'ENCODED-BY'
+
+        ]
+
+        for tag_name in unwanted:
+            try:
+                file_object.raw[tag_name] = [""]
+            except KeyError:
+                continue
+
+        return file_object
+
+    def clear_unwanted_tags_mp3(self, file_name):
+        """
+        Clear unwanted tags in the audio file.
+        :param file_name: A string containing the name of the audio file (flac, mp3, etc.)
+        :return: Modified audio file object on success, otherwise unchanged
+        """
+        unwanted = [
+            'TLAN', 'TKWD', 'TMED', 'TMOO', 'TPE1', 'TPE2', 'TPE3', 'TPE4', 'TPUB',
+            'TRSN', 'TSRC', 'TSSE', 'UFID', 'USER', 'WCOM', 'WCOP', 'WOAS', 'WOAE',
+            'WFED'
+        ]
+
+        file_object = ID3(os.path.join(self.dir, file_name))
+
+        for tag_name in unwanted:
+            try:
+                file_object.delall(tag_name)
+            except KeyError:
+                continue
+
+        file_object.save()
+
+        return music_tag.load_file(os.path.join(self.dir, file_name))
+
     def set_tags(self):
         """
         Set metadata tags on audio files.
@@ -285,19 +333,25 @@ class TagSetter:
         # Check if digits  start file names, if all files start with a number, assume it is the track number.
         self.track_num_in_filename = self.files_start_with_track_num(file_names)
 
+        clear_unwanted = {
+            'flac': self.clear_unwanted_tags_flac,
+            'mp3': self.clear_unwanted_tags_mp3
+        }
+
         for f_name in file_names:
-            f = music_tag.load_file(os.path.join(self.dir, f_name))
             track_tags, track_num = self.track_tags_from_yml(f_name)
             track_tags['totaltracks'] = len(file_names)
 
+            file_obj = clear_unwanted[self.audio_file_ext](f_name)
+
             for track_tag, tag_value in track_tags.items():
                 if track_tag in ['tracknumber', 'year']:
-                    f[track_tag] = int(tag_value)
+                    file_obj[track_tag] = int(tag_value)
                     continue
 
-                f[track_tag] = str(tag_value)
+                file_obj[track_tag] = str(tag_value)
 
-            f.save()
+            file_obj.save()
 
             if not self.track_num_in_filename:
                 source_path = os.path.join(self.dir, f"{f_name}")
