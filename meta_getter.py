@@ -144,6 +144,27 @@ class MetaGetter(MusicTextGetter):
     def query(self, in_query):
         self._query = in_query
 
+    @staticmethod
+    def _get_work_artist_from_url(url_str, title_str):
+        """
+        If the received title (or most of it) ends the url and if so extract what comes before it.
+        :param url_str: A string containing a discogs URL of a release
+        :param title_str: A string containing a discogs title of a release
+        :return: A string containing the artist if artist is found, otherwise an empty string
+        """
+        title_lwr = title_str.lower()
+        url_lwr = url_str.lower()
+
+        # Check if title is in the URL, if not, see if part of the title is - work backwards, shedding
+        # the last word at each iteration
+        while title_lwr:
+            if title_lwr in url_lwr:
+                return url_str[:url_lwr.index(title_lwr)].strip('-')
+
+            title_lwr = re.sub(r'-[a-z]+$', '', title_lwr)
+
+        return ''
+
     def parse_url(self, in_url=""):
         """
         Parse received URL to extract release_id, artist and title.
@@ -163,8 +184,8 @@ class MetaGetter(MusicTextGetter):
         work_url = work_url[len(self.release) + 1:]
         work_title = self.title.replace('+?!.,:;_[](){}', '').replace(' ', '-')
         work_title = work_title.replace('\'', '')
-        work_artist = work_url[:work_url.lower().index(work_title.lower())].strip('-')
-        self.artist = work_artist
+        work_artist = self._get_work_artist_from_url(work_url, work_title)
+        self.artist = work_artist if work_artist else self.artist
         self.title = work_title
         return in_url
 
