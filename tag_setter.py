@@ -285,10 +285,9 @@ class TagSetter:
         file_object = music_tag.load_file(os.path.join(self.dir, file_name))
 
         unwanted = [
-            'language', 'encoder', 'minor_version', 'major_band',
-            'compatible_bands', 'replaygain_track_gain', 'replaygain_track_peak',
+            'language', 'encoder', 'minor_version', 'major_band', 'major_brand',
+            'compatible_bands', 'compatible_brands', 'replaygain_track_gain', 'replaygain_track_peak',
             'itunes_cddb_1', 'PUBLISHER', 'RECORDED-BY', 'GRACENOTEFILEID', 'GRACENOTEEXTDATA', 'ENCODED-BY'
-
         ]
 
         for tag_name in unwanted:
