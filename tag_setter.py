@@ -10,7 +10,7 @@ import music_tag
 from mutagen.id3 import ID3
 
 from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
-from utils import log_it  # pylint: disable=import-error
+from utils import eval_bool_str, log_it  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
 Make sure the audio files have names composed of track numbers and titles as in the YAML file.
@@ -26,7 +26,8 @@ class TagSetter:
     This class encapsulates an audio metadata tag setting functionality.
     """
 
-    def __init__(self, in_dir='', in_yml=''):
+    def __init__(self, in_dir='', in_yml='', in_correcting=False):
+        self._correcting = False
         self._dir = ''
         self._yml_file = ''
         self._song_tags = {}
@@ -39,6 +40,15 @@ class TagSetter:
         self.song_tags = {}
         self.audio_file_ext = ''
         self.track_num_in_filename = False
+        self.correcting = in_correcting
+
+    @property
+    def correcting(self):  # pylint: disable=missing-function-docstring
+        return self._correcting
+
+    @correcting.setter
+    def correcting(self, in_correct):
+        self._correcting = in_correct
 
     @property
     def dir(self):  # pylint: disable=missing-function-docstring
@@ -84,14 +94,14 @@ class TagSetter:
 
         return in_path.split("/")[-1]
 
-    def get_audio_file_list(self):
+    def get_audio_file_list(self, use_dir=''):
         """
         Get a list of audio files from a directory stored in a member var.
         :return: A list of audio files on success, and empty list if no files are found
         """
         out_files = []
 
-        for curr_dir, sub_dirs, files in os.walk(self.dir):
+        for curr_dir, sub_dirs, files in os.walk(self.dir if not use_dir else use_dir):
             _ = curr_dir
             _ = sub_dirs
             out_files += [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS[:-1]]
@@ -359,23 +369,87 @@ class TagSetter:
 
         return True
 
+    def correct_directory(self, in_dir, in_files, in_tags):
+        """
+        Correct metadata in one audio directory
+        :param in_dir:  Path and name of the directory
+        :param in_files: A list of files in the directory
+        :param in_tags: The tags (and new values)
+        :return: number of files changed
+        """
+        changed_file_count = 0
+        for f_name in in_files:
+            file_obj = music_tag.load_file(os.path.join(self.dir, in_dir, f_name))
+
+            tag_changes = 0
+            for yml_tag in in_tags:
+                try:
+                    for tag_key, tag_val in yml_tag.items():
+                        if tag_key in ['tracknumber', 'year']:
+                            file_obj[tag_key] = int(tag_val)
+                            continue
+
+                        if file_obj[tag_key].value == tag_val:
+                            continue
+
+                        file_obj[tag_key] = tag_val
+                        tag_changes += 1
+                except AttributeError:
+                    log_it("error", f"yml_dir={in_dir} tag={repr(yml_tag)}")
+                    sys.exit(111)
+
+            if tag_changes == 0:
+                continue
+
+            file_obj.save()
+            changed_file_count += 1
+
+        return changed_file_count
+
+    def correct_tags(self):
+        """
+        Correct metadata tags on audio files.
+        :return: Always True
+        """
+
+        for yml_dir, yml_tags in self.yml.items():
+            file_names = self.get_audio_file_list(use_dir=os.path.join(self.dir, yml_dir))
+
+            changed_file_num = self.correct_directory(yml_dir, file_names, yml_tags)
+
+            log_it("info", "dir", f"{yml_dir}, {changed_file_num} files changed")
+
+        return True
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
-    parser.add_argument("-d", "--directory", help="Full path to the directory containing audio files to which to "
-                                                  "apply tags",
+    parser.add_argument("-d", "--directory", help="Full path to the directory containing audio "
+                                                  "files to which to apply tags (or directory containing "
+                                                  "sub-directories with audio files, see -c).",
                         type=str,
                         dest='audio_dir',
                         required=True)
+    parser.add_argument("-c", "--corrections", help="Flag indicating whether to correct metadata "
+                                                    "in audio files in this case -y provides a yaml file that "
+                                                    "specifies the corrections.",
+                        type=str,
+                        dest='corrections',
+                        required=False)
     parser.add_argument("-y", "--yaml",
-                        help="Name of the yaml file from which to read tag content",
+                        help="Name of the yaml file from which to read tag content, for example see "
+                             "example-tag-change.yml in the directory of tag_setter.py",
                         type=str,
                         dest='yaml_file',
                         required=False)
 
     args = parser.parse_args()
 
-    ts = TagSetter(in_dir=args.audio_dir, in_yml=args.yaml_file)
+    ts = TagSetter(in_dir=args.audio_dir, in_yml=args.yaml_file, in_correcting=eval_bool_str(args.corrections))
+
+    if ts.correcting:
+        ts.correct_tags()
+        sys.exit(0)
 
     if ts.set_tags():
         sys.exit(0)
