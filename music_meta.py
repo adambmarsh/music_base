@@ -9,6 +9,7 @@ This module hosts the class MusicMeta
 ###############################################################################
 import datetime
 import os
+import sys
 import re
 from os import listdir
 from os.path import isfile, join
@@ -158,6 +159,9 @@ class MusicMeta:
         :return: Repaired comment string or an empty string
         """
         if not in_comment:
+            return ""
+
+        if 'engID3v1 Comment' in in_comment:
             return ""
 
         if re.search(r'X{1,3}[A-Z]+DURATION', in_comment):
@@ -546,7 +550,7 @@ class MusicMeta:
     async def get_music_metadata(self, in_files=None, dir_path=None, dir_name=None):
         """
         Retrieve metadata from tags in .mp3, .flac, .ogg, etc. files and from a .yml if present.
-        The data from tags are saved in self.tags, while yaml data are returned to the caller
+        The data from tags are saved in `self.tags`, while yaml data are returned to the caller
         :param in_files: A list of files from an album/CD directory
         :param dir_path: The path to the album/CD directory
         :param dir_name: The name of the album/CD directory
@@ -1050,6 +1054,9 @@ class MusicMeta:
             new_mod = 1
             db_album = Album(**album_dict)
             db_album.save()
+        except ValueError:
+            log_it('error', __name__, f"\n{repr(album_dict)}")
+            sys.exit(111)
 
         return db_album, new_mod
 
