@@ -256,7 +256,7 @@ class TagSetter:
             sys.exit(1)
 
         tags['tracknumber'] = track_no
-        tags['title'] = re.sub(r'^[0-9_]+', '', work_title)
+        tags['title'] = re.sub(r'^[0-9_]+', '', work_title).strip()
 
         return tags, track_no
 
