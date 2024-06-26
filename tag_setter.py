@@ -7,9 +7,8 @@ import re
 import sys
 
 import music_tag
-from mutagen.id3 import ID3
-
 from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
+from mutagen.id3 import ID3
 from utils import eval_bool_str, log_it  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.

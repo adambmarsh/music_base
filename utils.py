@@ -12,10 +12,9 @@ This module contains utility functions
 #
 ###############################################################################
 import itertools
+import logging
 import os
 import re
-import logging
-
 from enum import Enum
 
 SEC_IN_DAY = 24 * 3600
