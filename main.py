@@ -6,7 +6,6 @@ import os
 
 # Your application specific imports
 from django.core.wsgi import get_wsgi_application
-
 from orm.models import Album  # NOQA  # pylint: disable=unused-import, disable=import-error
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")

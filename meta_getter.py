@@ -10,10 +10,9 @@ import sys
 from datetime import datetime
 
 from discogs_wrapper import DV
-from ruamel.yaml import YAML
-
 from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
 from music_text_getter import MusicTextGetter  # pylint: disable=import-error
+from ruamel.yaml import YAML
 from utils import log_it  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = ""
