@@ -1,14 +1,16 @@
 """
 Module with code to set audio metadata tags.
 """
+
 import argparse
 import os
 import re
 import sys
 
 import music_tag
-from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
 from mutagen.id3 import ID3
+
+from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
 from utils import eval_bool_str, log_it  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
@@ -190,8 +192,7 @@ class TagSetter:
         if not artist_parts:
             return in_tags
 
-        in_tags['composer'] = self.yml.get('composer',
-                                           " ".join([f"{artist_parts[-1]},"] + artist_parts[:-1]))
+        in_tags['composer'] = self.yml.get('composer', " ".join([f"{artist_parts[-1]},"] + artist_parts[:-1]))
 
         in_tags['albumartist'] = performer
 
@@ -214,7 +215,7 @@ class TagSetter:
         found = re.search(r'^[0-9]{1,3}[_ ]', in_name)
 
         try:
-            track_no = int(in_number if not found else in_name[found.start(): found.end()].strip('_'))
+            track_no = int(in_number if not found else in_name[found.start() : found.end()].strip('_'))
         except ValueError as ve:
             log_it("error", "extract_track_num_from_file_name", {repr(ve)})
             return -1
@@ -229,7 +230,7 @@ class TagSetter:
         """
         file_base, file_ext = os.path.splitext(file_name)
         base_name = re.sub(r'^\d{,3}[_ ]', '', file_base) if self.track_num_in_filename else file_base
-        track_no = file_base[:len(base_name) * -1].strip(" _") if self.track_num_in_filename else ""
+        track_no = file_base[: len(base_name) * -1].strip(" _") if self.track_num_in_filename else ""
         bare_ext = file_ext.strip('.')
         tags = {}
 
@@ -294,9 +295,21 @@ class TagSetter:
         file_object = music_tag.load_file(os.path.join(self.dir, file_name))
 
         unwanted = [
-            'language', 'encoder', 'minor_version', 'major_band', 'major_brand',
-            'compatible_bands', 'compatible_brands', 'replaygain_track_gain', 'replaygain_track_peak',
-            'itunes_cddb_1', 'PUBLISHER', 'RECORDED-BY', 'GRACENOTEFILEID', 'GRACENOTEEXTDATA', 'ENCODED-BY'
+            'language',
+            'encoder',
+            'minor_version',
+            'major_band',
+            'major_brand',
+            'compatible_bands',
+            'compatible_brands',
+            'replaygain_track_gain',
+            'replaygain_track_peak',
+            'itunes_cddb_1',
+            'PUBLISHER',
+            'RECORDED-BY',
+            'GRACENOTEFILEID',
+            'GRACENOTEEXTDATA',
+            'ENCODED-BY',
         ]
 
         for tag_name in unwanted:
@@ -314,9 +327,25 @@ class TagSetter:
         :return: Modified audio file object on success, otherwise unchanged
         """
         unwanted = [
-            'TLAN', 'TKWD', 'TMED', 'TMOO', 'TPE1', 'TPE2', 'TPE3', 'TPE4', 'TPUB',
-            'TRSN', 'TSRC', 'TSSE', 'UFID', 'USER', 'WCOM', 'WCOP', 'WOAS', 'WOAE',
-            'WFED'
+            'TLAN',
+            'TKWD',
+            'TMED',
+            'TMOO',
+            'TPE1',
+            'TPE2',
+            'TPE3',
+            'TPE4',
+            'TPUB',
+            'TRSN',
+            'TSRC',
+            'TSSE',
+            'UFID',
+            'USER',
+            'WCOM',
+            'WCOP',
+            'WOAS',
+            'WOAE',
+            'WFED',
         ]
 
         file_object = ID3(os.path.join(self.dir, file_name))
@@ -341,10 +370,7 @@ class TagSetter:
         # Check if digits  start file names, if all files start with a number, assume it is the track number.
         self.track_num_in_filename = self.files_start_with_track_num(file_names)
 
-        clear_unwanted = {
-            'flac': self.clear_unwanted_tags_flac,
-            'mp3': self.clear_unwanted_tags_mp3
-        }
+        clear_unwanted = {'flac': self.clear_unwanted_tags_flac, 'mp3': self.clear_unwanted_tags_mp3}
 
         for f_name in file_names:
             track_tags, track_num = self.track_tags_from_yml(f_name)
@@ -423,24 +449,35 @@ class TagSetter:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
-    parser.add_argument("-d", "--directory", help="Full path to the directory containing audio "
-                                                  "files to which to apply tags (or directory containing "
-                                                  "sub-directories with audio files, see -c).",
-                        type=str,
-                        dest='audio_dir',
-                        required=True)
-    parser.add_argument("-c", "--corrections", help="Flag indicating whether to correct metadata "
-                                                    "in audio files in this case -y provides a yaml file that "
-                                                    "specifies the corrections.",
-                        type=str,
-                        dest='corrections',
-                        required=False)
-    parser.add_argument("-y", "--yaml",
-                        help="Name of the yaml file from which to read tag content, for example see "
-                             "example-tag-change.yml in the directory of tag_setter.py",
-                        type=str,
-                        dest='yaml_file',
-                        required=False)
+    parser.add_argument(
+        "-d",
+        "--directory",
+        help="Full path to the directory containing audio "
+        "files to which to apply tags (or directory containing "
+        "sub-directories with audio files, see -c).",
+        type=str,
+        dest='audio_dir',
+        required=True,
+    )
+    parser.add_argument(
+        "-c",
+        "--corrections",
+        help="Flag indicating whether to correct metadata "
+        "in audio files in this case -y provides a yaml file that "
+        "specifies the corrections.",
+        type=str,
+        dest='corrections',
+        required=False,
+    )
+    parser.add_argument(
+        "-y",
+        "--yaml",
+        help="Name of the yaml file from which to read tag content, for example see "
+        "example-tag-change.yml in the directory of tag_setter.py",
+        type=str,
+        dest='yaml_file',
+        required=False,
+    )
 
     args = parser.parse_args()
 
