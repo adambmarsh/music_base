@@ -4,8 +4,8 @@ Module to retrieve album description from a known source.
 import re
 
 from bs4 import BeautifulSoup, Tag
-from request_base import BaseRequest  # pylint: disable=import-error
 from ruamel.yaml.scalarstring import PreservedScalarString as Pss
+from request_base import BaseRequest  # pylint: disable=import-error
 from utils import log_it  # pylint: disable=import-error
 
 

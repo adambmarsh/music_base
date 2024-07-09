@@ -215,7 +215,7 @@ class TagSetter:
         found = re.search(r'^[0-9]{1,3}[_ ]', in_name)
 
         try:
-            track_no = int(in_number if not found else in_name[found.start() : found.end()].strip('_'))
+            track_no = int(in_number if not found else in_name[found.start(): found.end()].strip('_'))
         except ValueError as ve:
             log_it("error", "extract_track_num_from_file_name", {repr(ve)})
             return -1
@@ -453,8 +453,8 @@ if __name__ == '__main__':
         "-d",
         "--directory",
         help="Full path to the directory containing audio "
-        "files to which to apply tags (or directory containing "
-        "sub-directories with audio files, see -c).",
+             "files to which to apply tags (or directory containing "
+             "sub-directories with audio files, see -c).",
         type=str,
         dest='audio_dir',
         required=True,
@@ -463,8 +463,8 @@ if __name__ == '__main__':
         "-c",
         "--corrections",
         help="Flag indicating whether to correct metadata "
-        "in audio files in this case -y provides a yaml file that "
-        "specifies the corrections.",
+             "in audio files in this case -y provides a yaml file that "
+             "specifies the corrections.",
         type=str,
         dest='corrections',
         required=False,
@@ -473,7 +473,7 @@ if __name__ == '__main__':
         "-y",
         "--yaml",
         help="Name of the yaml file from which to read tag content, for example see "
-        "example-tag-change.yml in the directory of tag_setter.py",
+             "example-tag-change.yml in the directory of tag_setter.py",
         type=str,
         dest='yaml_file',
         required=False,
