@@ -14,21 +14,21 @@ import sys
 from os import listdir
 from os.path import isfile, join
 
-import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
 import ruamel
 from addict import Dict
 from anyio import create_task_group
 from asgiref.sync import sync_to_async
-
-# noinspection PyProtectedMember
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA # pylint: disable=unused-import
-from orm.models import Album, Song  # NOQA # pylint: disable=unused-import, disable=import-error
+
+# noinspection PyProtectedMember
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq  # NOQA  # pylint: disable=unused-import
 from ruamel.yaml.parser import ParserError
 from ruamel.yaml.scanner import ScannerError
 from tinytag import TinyTag
+from orm.models import Album, Song  # NOQA # pylint: disable=unused-import, disable=import-error
+import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
 from utils import eval_bool_str, log_it  # pylint: disable=import-error
 
 composer_classical = ['Beethoven', 'Mozart', 'Chopin']
