@@ -22,14 +22,11 @@ from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA # pylint: disable=unused-import
 
 # noinspection PyProtectedMember
-from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq  # NOQA  # pylint: disable=unused-import
-from ruamel.yaml.parser import ParserError
-from ruamel.yaml.scanner import ScannerError
 from tinytag import TinyTag
 from orm.models import Album, Song  # NOQA # pylint: disable=unused-import, disable=import-error
 import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
-from utils import eval_bool_str, log_it  # pylint: disable=import-error
+from utils import eval_bool_str, log_it, read_yaml, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 composer_classical = ['Beethoven', 'Mozart', 'Chopin']
 
@@ -44,7 +41,6 @@ dir_names = [
 
 MIN_YEAR_DIGITS = 4
 MAX_YEAR_DIGITS = 4
-USE_FILE_EXTENSIONS = ["ape", "flac", "mp3", "ogg", "wma", "yml"]
 
 
 class MusicMeta:
@@ -561,7 +557,7 @@ class MusicMeta:
         async with create_task_group() as tg:
             for f in in_files:
                 if f.endswith("yml"):
-                    yml_data = self.read_yaml(os.path.join(dir_path, f))
+                    yml_data = read_yaml(os.path.join(dir_path, f))
                     continue
 
                 tg.start_soon(self.get_music_file_tags, {
@@ -1140,23 +1136,3 @@ class MusicMeta:
 
         if new_or_mod > 0:
             self.albums_new_mod += 1
-
-    @staticmethod
-    def read_yaml(f_path):
-        """
-        Read YAML file and return contents as a dict
-        :param f_path: Path to file to read
-        :return: File content as a dict
-        """
-        f_contents = {}
-        yaml = YAML()
-
-        try:
-            with open(f_path, encoding="UTF-8") as f_yml:
-                f_contents = yaml.load(f_yml)
-        except ScannerError as e:  # NOQA
-            log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-        except ParserError as e:  # NOQA
-            log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
-
-        return f_contents

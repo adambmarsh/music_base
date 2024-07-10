@@ -5,8 +5,8 @@ import argparse
 import sys
 
 # from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA
-import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
 from anyio import run
+import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
 from music_meta import MusicMeta  # pylint: disable=import-error
 from orm.models import Album, Song  # NOQA  # pylint: disable=unused-import, disable=import-error
 

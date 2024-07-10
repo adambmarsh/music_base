@@ -135,7 +135,7 @@ class MusicTextGetter(BaseRequest):
             if not self.validate_text_data(soup_to_check=news_right):
                 return ""
 
-            first_p = news_right.find_all("p", recursive=True)
+            first_p = news_right.find_all_next("p", recursive=True)
             all_p = []
             all_p = self.find_paragraphs(first_p, all_p)
             out_text = []

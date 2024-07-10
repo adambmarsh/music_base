@@ -10,10 +10,9 @@ import sys
 from datetime import datetime
 
 from discogs_wrapper import DV
-from ruamel.yaml import YAML
-from music_meta import USE_FILE_EXTENSIONS, MusicMeta  # pylint: disable=import-error
+
 from music_text_getter import MusicTextGetter  # pylint: disable=import-error
-from utils import log_it  # pylint: disable=import-error
+from utils import log_it, read_yaml, write_yaml_file, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = ""
 
@@ -41,7 +40,7 @@ class MetaGetter(MusicTextGetter):
         self.genre = genre
         self.query = query if query else ""
         script_dir = os.path.dirname(os.path.realpath(__file__))
-        self.cfg = MusicMeta(base_dir=script_dir).read_yaml(os.path.join(script_dir, "discogs.yml"))
+        self.cfg = read_yaml(os.path.join(script_dir, "discogs.yml"))
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
 
         super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
@@ -309,18 +308,6 @@ class MetaGetter(MusicTextGetter):
         return self.expected_audio_file_count(in_album)
 
     @staticmethod
-    def last_dir_in_path(in_path: str):
-        """
-        Retrieve the last directory from the supplied path.
-        :param in_path: File/dir path from which to retrieve the last directory
-        :return: A string containing the retrieved directory name
-        """
-        if in_path.endswith("/"):
-            in_path = in_path[:-1]
-
-        return in_path.split("/")[-1]
-
-    @staticmethod
     def record_with_credits(in_records: list, analogue=True):
         """
         Find an album/CD/record with credits if available in the received list.
@@ -569,31 +556,6 @@ class MetaGetter(MusicTextGetter):
 
         return content_obj
 
-    def write_yaml_file(self, file_data):
-        """
-        Write dict to a YAML file.
-        :param file_data: Data to write as a string
-        :return: Always True
-        """
-        cur_dir = os.getcwd()
-        dest_dir = self.dir
-
-        if not dest_dir:
-            dest_dir = cur_dir
-
-        if not os.path.isdir(dest_dir):
-            os.mkdir(dest_dir)
-
-        filepath = os.path.join(dest_dir, self.last_dir_in_path(dest_dir) + ".yml")
-
-        with open(filepath, 'wb') as out:
-            yml = YAML()
-            yml.explicit_start = True
-            yml.indent(sequence=4, offset=2)
-            yml.dump(file_data, out)
-
-        return True
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=SCRIPT_DESCRIPTION)
@@ -662,6 +624,6 @@ if __name__ == '__main__':
         log_it("info", __name__, "No data found")
         sys.exit(1)
 
-    mg.write_yaml_file(yml_data)
+    write_yaml_file(yml_data, out_dir=mg.dir)
 
     sys.exit(0)
