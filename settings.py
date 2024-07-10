@@ -1,12 +1,18 @@
+"""
+Django settings
+"""
+
 import os
 
-from utils import read_file
+from utils import read_file  # pylint: disable=import-error
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 HOST_ADDRESS = f'{read_file(".host_address", os.getcwd())}'
 
-# PostreSQL
+ALLOWED_HOSTS = ['192.168.8.24']
+
+# PostgreSQL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',

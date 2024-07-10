@@ -16,10 +16,15 @@ import logging
 import os
 import re
 from enum import Enum
+from ruamel.yaml import YAML
+from ruamel.yaml.parser import ParserError
+from ruamel.yaml.scanner import ScannerError
 
 SEC_IN_DAY = 24 * 3600
 
 OUT_RELATIVE_PATH = '/../out/'
+
+USE_FILE_EXTENSIONS = ["ape", "flac", "mp3", "ogg", "wma", "yml"]
 
 
 def log_it(level='info', src_name=None, text=None):
@@ -46,7 +51,7 @@ def log_it(level='info', src_name=None, text=None):
 def run_scandir(in_dir, ext):  # dir: str, ext: list
     """
     Find all the subdirectories and files in them. If ext is provided, list only files with matching extension
-    :param in_dir: Input directory or which subidrectories are to be listed
+    :param in_dir: Input directory or which subdidrectories are to be listed
     :param ext: File extension to match
     :return: A list of subdirectories and a list of files in them
     """
@@ -91,6 +96,65 @@ def read_file(filename, dest_dir=None):
     except FileNotFoundError:
         print(f"Missing: {filepath}")
         return ''
+
+
+def read_yaml(f_path):
+    """
+    Read YAML file and return contents as a dict
+    :param f_path: Path to file to read
+    :return: File content as a dict
+    """
+    f_contents = {}
+    yaml = YAML()
+
+    try:
+        with open(f_path, encoding="UTF-8") as f_yml:
+            f_contents = yaml.load(f_yml)
+    except ScannerError as e:  # NOQA
+        log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
+    except ParserError as e:  # NOQA
+        log_it("debug", __name__, f"Bad yaml in {f_path}: {e}")
+
+    return f_contents
+
+
+def write_yaml_file(file_data, out_dir=None):
+    """
+    Write dict to a YAML file.
+    :param file_data: Data to write as a string
+    :param out_dir: directory where to write the output file
+    :return: Always True
+    """
+    cur_dir = os.getcwd()
+    dest_dir = out_dir
+
+    if not dest_dir:
+        dest_dir = cur_dir
+
+    if not os.path.isdir(dest_dir):
+        os.mkdir(dest_dir)
+
+    filepath = os.path.join(dest_dir, last_dir_in_path(dest_dir) + ".yml")
+
+    with open(filepath, 'wb') as out:
+        yml = YAML()
+        yml.explicit_start = True
+        yml.indent(sequence=4, offset=2)
+        yml.dump(file_data, out)
+
+    return True
+
+
+def last_dir_in_path(in_path: str):
+    """
+    Retrieve the last directory from the supplied path.
+    :param in_path: File/dir path from which to retrieve the last directory
+    :return: A string containing the retrieved directory name
+    """
+    if in_path.endswith("/"):
+        in_path = in_path[:-1]
+
+    return in_path.split("/")[-1]
 
 
 def eval_bool_str(in_str):
