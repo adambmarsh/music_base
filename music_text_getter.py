@@ -121,7 +121,7 @@ class MusicTextGetter(BaseRequest):
         :param as_html_str: Flag indicating if HTML string is to be returned
         :return: A string containing the retrieved text on success, otherwise an empty string
         """
-        page_url = self.url + self.search
+        page_url = self.url + (self.search or re.sub(r' +', '-', self.album_title.lower()))
         response = self._submit_request('GET', page_url, '')
 
         if response.status_code == 200:
@@ -135,7 +135,7 @@ class MusicTextGetter(BaseRequest):
             if not self.validate_text_data(soup_to_check=news_right):
                 return ""
 
-            first_p = news_right.find_all_next("p", recursive=True)
+            first_p = news_right.find_all("p", recursive=True)
             all_p = []
             all_p = self.find_paragraphs(first_p, all_p)
             out_text = []
