@@ -305,6 +305,9 @@ class MetaGetter(MusicTextGetter):
                 set(re.split(r'\W', album_artist.lower() + " " + album_title.lower()))):
             return False
 
+        if self.org_data_url:
+            return True
+        
         return self.expected_audio_file_count(in_album)
 
     @staticmethod
