@@ -307,7 +307,7 @@ class MetaGetter(MusicTextGetter):
 
         if self.org_data_url:
             return True
-        
+
         return self.expected_audio_file_count(in_album)
 
     @staticmethod
