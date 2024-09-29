@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 HOST_ADDRESS = f'{read_file(".host_address", os.getcwd())}'
 
-ALLOWED_HOSTS = ['192.168.8.24']
+ALLOWED_HOSTS = [HOST_ADDRESS]
 
 # PostgreSQL
 DATABASES = {
