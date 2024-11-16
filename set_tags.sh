@@ -87,4 +87,4 @@ cur_dir=$(pwd)
 
 ## Use path appropriate to the host system in the directive below:
 # shellcheck source=/home/adam/.virtualenvs/generate-vlc-playlist/bin/activate
-source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && cd "$cur_dir" || exit
+. "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && cd "$cur_dir" || exit
