@@ -132,4 +132,4 @@ fi
 
 cur_dir=$(pwd)
 
-source "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -c "$country" -m "$to_match" -a "$artist" -i "$release_id" -t "$title" -u "$url" -r "$query_str" && deactivate && cd "$cur_dir" || exit
+. "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -c "$country" -m "$to_match" -a "$artist" -i "$release_id" -t "$title" -u "$url" -r "$query_str" && deactivate && cd "$cur_dir" || exit
