@@ -1,5 +1,5 @@
 """
-Top-level module for managing music meta data and saving it to DB.
+Top-level module for managing music metadata and saving it to DB.
 """
 import argparse
 import sys
