@@ -138,7 +138,7 @@ class TagSetter:
             yml_titles.append(work_key)
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
 
-            if self.track_num_in_filename and int(in_number) != int(track_num):
+            if not track_num or (self.track_num_in_filename and int(in_number) != int(track_num)):
                 continue
 
             # Clean track name of all punctuation, spaces and digits
