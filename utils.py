@@ -51,7 +51,7 @@ def log_it(level='info', src_name=None, text=None):
 def run_scandir(in_dir, ext):  # dir: str, ext: list
     """
     Find all the subdirectories and files in them. If ext is provided, list only files with matching extension
-    :param in_dir: Input directory or which subdidrectories are to be listed
+    :param in_dir: Input directory or which subdirectories are to be listed
     :param ext: File extension to match
     :return: A list of subdirectories and a list of files in them
     """
