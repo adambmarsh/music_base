@@ -587,14 +587,14 @@ class MusicMeta:
             return None
 
         rx_pattern = re.compile(f"({'|'.join(USE_FILE_EXTENSIONS)})$")
-        ids_list = [ft.get('track', '') for ft in file_tags if re.search(rx_pattern, ft.get('file', ''))]
-        ids_list = [id_str for id_str in ids_list if id_str]
+        ids_list = [ft.get('track', None) for ft in file_tags if re.search(rx_pattern, ft.get('file', None))]
+        ids_list = [id_obj for id_obj in ids_list if id_obj]
 
         if not ids_list:
             return {}
 
         try:
-            ids_list.sort(key=self.natural_keys)
+            ids_list.sort(key=self.natural_keys if isinstance(ids_list[0], str) else None)
         except TypeError as te:
             log_it("debug", __name__, repr(te))
 
