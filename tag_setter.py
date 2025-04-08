@@ -102,9 +102,7 @@ class TagSetter:
         """
         out_files = []
 
-        for curr_dir, sub_dirs, files in os.walk(self.dir if not use_dir else use_dir):
-            _ = curr_dir
-            _ = sub_dirs
+        for _, _, files in os.walk(self.dir if not use_dir else use_dir):
             out_files += [f for f in files if f.split('.')[-1] in USE_FILE_EXTENSIONS[:-1]]
 
         return out_files
@@ -133,7 +131,7 @@ class TagSetter:
         clean_in_key = self.clean_non_alnum(in_key, in_number).lower()
 
         yml_titles = []
-        for track in self.yml.get('tracks'):
+        for track in self.yml.get('tracks', []):
             work_key = next(iter(track.keys()), '') if isinstance(track, dict) else track
             yml_titles.append(work_key)
             track_num = re.sub(r'(^\d{,3}).+', '\\1', work_key)
@@ -222,13 +220,13 @@ class TagSetter:
 
         return track_no
 
-    def track_tags_from_yml(self, file_name) -> (dict, int):
+    def track_tags_from_yml(self, audio_file_name) -> (dict, int):
         """
         Retrieve music track tags from a YAML file
-        :param file_name: Name of the file
+        :param audio_file_name: Name of audio file
         :return: A tuple - a dict of track tags and a track number
         """
-        file_base, file_ext = os.path.splitext(file_name)
+        file_base, file_ext = os.path.splitext(audio_file_name)
         base_name = re.sub(r'^\d{,3}[_ ]', '', file_base) if self.track_num_in_filename else file_base
         track_no = file_base[: len(base_name) * -1].strip(" _") if self.track_num_in_filename else ""
         bare_ext = file_ext.strip('.')
