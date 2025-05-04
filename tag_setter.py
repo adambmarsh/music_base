@@ -132,8 +132,7 @@ class TagSetter:
         tracks_only = {}
         for track in self.yml.get('tracks', []):
             work_track = next(iter(track.keys()), '') if isinstance(track, dict) else track
-            track_num = (re.sub(r'(^\d{,3}).+', '\\1', work_track) or
-                         re.sub(r'(^[A-Z]\d{,2}).+', '\\1', work_track))
+            track_num = re.sub(r'([A-Z]?\d{,3}).+', '\\1', work_track)
 
             if not track_num or track_num == work_track:
                 continue
