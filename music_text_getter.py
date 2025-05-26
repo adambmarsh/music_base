@@ -122,15 +122,33 @@ class MusicTextGetter(BaseRequest):
         :return: A string containing the retrieved text on success, otherwise an empty string
         """
         page_url = self.url + (self.search or re.sub(r' +', '-', self.album_title.lower()))
-        response = self._submit_request('GET', page_url, '')
+        attempt = 0
 
-        if response.status_code == 200:
+        # Try the URL as is, but if we get no description, try again appending '1' to the end of the URL --
+        # jazzforum.com.pl sometimes uses the album title and 1 at the end of the URL. We are just making a
+        # stab at guessing here, so if two tries not work, give up.
+        while attempt < 2:
+            response = self._submit_request('GET', page_url, '')
+
+            # Even if there is no data, the URL must work -- if not, give up at once
+            if response.status_code > 200:
+                log_it('error', __name__, f"Failed to get page content from {self.url}.")
+                log_it('error', __name__,
+                       f"Get content response:\n{str(response.status_code)}: {response.reason}\n")
+
+                return ""
+
             if as_html_str:
                 return response.content.decode()
 
             bsoup = BeautifulSoup(response.content.decode(), "html.parser")
 
             news_right = bsoup.find("div", attrs={'class': "news_glowny_prawy"})
+
+            if not news_right:
+                attempt += 1
+                page_url = page_url + f"{attempt}"
+                continue
 
             if not self.validate_text_data(soup_to_check=news_right):
                 return ""
@@ -150,7 +168,4 @@ class MusicTextGetter(BaseRequest):
             return Pss("\n\n".join(out_text))
 
         log_it('error', __name__, f"Failed to get page content from {self.url}.")
-        log_it('error', __name__,
-               f"Get content response:\n{str(response.status_code)}: {response.reason}\n")
-
         return ""
