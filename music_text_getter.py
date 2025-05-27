@@ -121,13 +121,20 @@ class MusicTextGetter(BaseRequest):
         :param as_html_str: Flag indicating if HTML string is to be returned
         :return: A string containing the retrieved text on success, otherwise an empty string
         """
-        page_url = self.url + (self.search or re.sub(r' +', '-', self.album_title.lower()))
-        attempt = 0
+        title_str = re.sub(r' +', '-', self.album_title.lower())
+        artist_str = re.sub(r' +', '-', self.album_artist.lower())
+        part_url_variant = [
+            self.search or title_str,
+            f"{title_str}1",
+            f"{artist_str}-{title_str}",
+            f"{artist_str}-{title_str}1"
+        ]
 
-        # Try the URL as is, but if we get no description, try again appending '1' to the end of the URL --
-        # jazzforum.com.pl sometimes uses the album title and 1 at the end of the URL. We are just making a
-        # stab at guessing here, so if two tries not work, give up.
-        while attempt < 2:
+        # Try to get text using the URL variants -- jazzforum.com.pl normally uses artist's anme and album title,
+        # sometimes just the album title or title followed by '1' at the end of the URL . We are just guessing
+        # here, so if text retrieval fails, OK.
+        for variant in part_url_variant:
+            page_url = self.url + variant
             response = self._submit_request('GET', page_url, '')
 
             # Even if there is no data, the URL must work -- if not, give up at once
@@ -146,12 +153,10 @@ class MusicTextGetter(BaseRequest):
             news_right = bsoup.find("div", attrs={'class': "news_glowny_prawy"})
 
             if not news_right:
-                attempt += 1
-                page_url = page_url + f"{attempt}"
                 continue
 
             if not self.validate_text_data(soup_to_check=news_right):
-                return ""
+                continue
 
             first_p = news_right.find_all("p", recursive=True)
             all_p = []
