@@ -123,11 +123,13 @@ class MusicTextGetter(BaseRequest):
         """
         title_str = re.sub(r' +', '-', self.album_title.lower())
         artist_str = re.sub(r' +', '-', self.album_artist.lower())
+        artist_title_str = f"{artist_str}-{title_str}"
+
         part_url_variant = [
             self.search or title_str,
             f"{title_str}1",
-            f"{artist_str}-{title_str}",
-            f"{artist_str}-{title_str}1"
+            artist_title_str,
+            f"{artist_title_str}1"
         ]
 
         # Try to get text using the URL variants -- jazzforum.com.pl normally uses artist's anme and album title,
@@ -139,38 +141,46 @@ class MusicTextGetter(BaseRequest):
 
             # Even if there is no data, the URL must work -- if not, give up at once
             if response.status_code > 200:
-                log_it('error', __name__, f"Failed to get page content from {self.url}.")
-                log_it('error', __name__,
-                       f"Get content response:\n{str(response.status_code)}: {response.reason}\n")
-
-                return ""
+                break
 
             if as_html_str:
                 return response.content.decode()
 
-            bsoup = BeautifulSoup(response.content.decode(), "html.parser")
+            bsoup_found = BeautifulSoup(
+                response.content.decode(),
+                "html.parser").find("div", attrs={'class': "news_glowny_prawy"})
 
-            news_right = bsoup.find("div", attrs={'class': "news_glowny_prawy"})
+            if not (text_found := self.text_from_news_right(bsoup_found)):
+                break
 
-            if not news_right:
-                continue
+            return text_found
 
-            if not self.validate_text_data(soup_to_check=news_right):
-                continue
-
-            first_p = news_right.find_all("p", recursive=True)
-            all_p = []
-            all_p = self.find_paragraphs(first_p, all_p)
-            out_text = []
-
-            for p_text in all_p:
-                p_text = re.sub(r'[ \n]+', ' ', p_text)
-                if p_text in out_text:
-                    continue
-
-                out_text.append(p_text)
-
-            return Pss("\n\n".join(out_text))
-
-        log_it('error', __name__, f"Failed to get page content from {self.url}.")
+        log_it('info', __name__, f"\"{self.album_title}\" by {self.album_artist}")
+        log_it('info', __name__, f"No review at {self.url} + {repr(part_url_variant)}.")
         return ""
+
+    def text_from_news_right(self, in_news_right: BeautifulSoup) -> str:
+        """
+        This method retrieves text from a specific section of a BeautifulSoup specific object.
+        :param in_news_right: Object from which to get text
+        :return: Retrieved text as a string or an empty string on failure
+        """
+        if not in_news_right:
+            return ''
+
+        if not self.validate_text_data(soup_to_check=in_news_right):
+            return ''
+
+        first_p = in_news_right.find_all("p", recursive=True)
+        all_p = []
+        all_p = self.find_paragraphs(first_p, all_p)
+        out_text = []
+
+        for p_text in all_p:
+            p_text = re.sub(r'[ \n]+', ' ', p_text)
+            if p_text in out_text:
+                continue
+
+            out_text.append(p_text)
+
+        return Pss("\n\n".join(out_text))
