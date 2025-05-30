@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup, Tag
 from ruamel.yaml.scalarstring import PreservedScalarString as Pss
 from request_base import BaseRequest  # pylint: disable=import-error
+from requests import ConnectionError
 from utils import log_it  # pylint: disable=import-error
 
 
@@ -115,9 +116,10 @@ class MusicTextGetter(BaseRequest):
 
         return True
 
-    def get_text_data(self, as_html_str=False):
+    def get_text_data(self, alt_artist=None, as_html_str=False):
         """
         Method to retrieve text data from a know source (JazzForum)
+        :param alt_artist: A string containing the alternative name of the artist
         :param as_html_str: Flag indicating if HTML string is to be returned
         :return: A string containing the retrieved text on success, otherwise an empty string
         """
@@ -132,12 +134,25 @@ class MusicTextGetter(BaseRequest):
             f"{artist_title_str}1"
         ]
 
-        # Try to get text using the URL variants -- jazzforum.com.pl normally uses artist's anme and album title,
+        if alt_artist:
+            alt_artist_str = re.sub(r' +', '-', alt_artist.lower())
+            alt_artist_title_str = f"{alt_artist_str}-{title_str}"
+            part_url_variant.append(alt_artist_title_str)
+            part_url_variant.append(f"{alt_artist_title_str}1")
+
+        # Try to get text using the URL variants -- 'jazzforum.com.pl' normally uses artist's name and album title,
         # sometimes just the album title or title followed by '1' at the end of the URL . We are just guessing
         # here, so if text retrieval fails, OK.
         for variant in part_url_variant:
             page_url = self.url + variant
-            response = self._submit_request('GET', page_url, '')
+            try:
+                response = self._submit_request('GET', page_url, '')
+            except ConnectionError:
+                log_it('info', __name__, f"Connection to {page_url} timed out")
+                break
+            except Exception as e:
+                log_it('info', __name__, f"Unable to connect to {page_url}, got exception {repr(e)}")
+                break
 
             # Even if there is no data, the URL must work -- if not, give up at once
             if response.status_code > 200:
@@ -151,7 +166,7 @@ class MusicTextGetter(BaseRequest):
                 "html.parser").find("div", attrs={'class': "news_glowny_prawy"})
 
             if not (text_found := self.text_from_news_right(bsoup_found)):
-                break
+                continue
 
             return text_found
 

@@ -25,7 +25,7 @@ class MetaGetter(MusicTextGetter):
     def __init__(self, dest_dir="", artist="", genre="", country="", query="", title="", release_id="", url="",
                  year=None, match=0):
         self._title = self.genre = self._artist = self._country = self._dir = self._data = self._release = \
-            self._query = self._org_data_url = ""
+            self._query = self._org_data_url = self._org_url_artist = ""
         self._cfg = {}
         self._year = None
         self._match = 0
@@ -43,8 +43,8 @@ class MetaGetter(MusicTextGetter):
         self.cfg = read_yaml(os.path.join(script_dir, "discogs.yml"))
         self.dclient = DV("/".join([self.cfg.get("app", 'my_app')]))
 
-        super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
         self.org_data_url = self.parse_url(url)
+        super().__init__(query_str=self.query, album_title=self.title, album_artist=self.artist)
 
     @property
     def data(self):  # pylint: disable=missing-function-docstring
@@ -93,6 +93,14 @@ class MetaGetter(MusicTextGetter):
     @org_data_url.setter
     def org_data_url(self, in_url):
         self._org_data_url = in_url
+
+    @property
+    def org_url_artist(self):  # pylint: disable=missing-function-docstring
+        return self._org_url_artist
+
+    @org_url_artist.setter
+    def org_url_artist(self, in_artist):
+        self._org_url_artist = in_artist
 
     @property
     def year(self):  # pylint: disable=missing-function-docstring
@@ -182,8 +190,10 @@ class MetaGetter(MusicTextGetter):
         work_url = work_url[len(self.release) + 1:]
         work_title = self.title.replace('+?!.,:;_[](){}', '').replace(' ', '-')
         work_title = work_title.replace('\'', '')
-        work_artist = self._get_work_artist_from_url(work_url, work_title)
-        self.artist = work_artist if work_artist else self.artist
+        self.org_url_artist = self._get_work_artist_from_url(work_url, work_title)
+        # Prefer artist supplied with switch -a, i.e. one we already have in self.artist:
+        self.artist = self.artist if (
+                self.artist and self.artist != self.org_url_artist) else self.org_url_artist
         self.title = work_title
         return in_url
 
@@ -485,7 +495,8 @@ class MetaGetter(MusicTextGetter):
         yml['style'] = ", ".join(in_data.get('styles', []))
         yml['tracks'] = self.get_tracks(in_data.get('tracklist', []))
         yml['credits'] = self.get_album_credits(in_data.get('extraartists', ''))
-        yml['description'] = (self.get_text_data() or "") if self.is_jazz_genre(yml.get('genre', '')) else ""
+        yml['description'] = (self.get_text_data(alt_artist=self.org_url_artist) or "") if (
+            self.is_jazz_genre(yml.get('genre', ''))) else ""
         yml['notes'] = self.get_album_notes(in_data.get('notes', ""))
 
         return yml
