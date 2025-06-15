@@ -2,6 +2,7 @@ addict>=2.4.0
 anyio>=4.8.0
 asgiref>=3.8.1
 beautifulsoup4>=4.13.1
+discogs-wrapper-python>=1.0.1
 Django>=5.1.5
 music_tag>=0.4.3
 mutagen>=1.47.0
