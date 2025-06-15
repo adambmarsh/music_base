@@ -63,6 +63,10 @@ target/
 *.csv
 # *.json
 
+# uv
+.python-version
+uv.lock
+
 # Project specific
 */oss_out/
 .env*
