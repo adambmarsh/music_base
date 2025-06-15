@@ -25,7 +25,7 @@
 
 ## Set paths as appropriate to your system:
 
-activate_path="$HOME/.virtualenvs/music_base/bin/activate"
+activate_path="$HOME/scripts/music_base/.venv/bin/activate"
 python_pkg_dir="$HOME/scripts/music_base"
 python_pkg="$python_pkg_dir/tag_setter.py"
 
@@ -86,5 +86,5 @@ fi
 cur_dir=$(pwd)
 
 ## Use path appropriate to the host system in the directive below:
-# shellcheck source=/home/adam/.virtualenvs/generate-vlc-playlist/bin/activate
+# shellcheck source=/home/adam/scripts/music_base/.venv/bin/activate
 . "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && cd "$cur_dir" || exit
