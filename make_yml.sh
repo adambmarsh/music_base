@@ -25,7 +25,7 @@
 
 ## Set paths as appropriate to your system:
 
-activate_path="$HOME/.virtualenvs/music_base/bin/activate"
+activate_path="$HOME/scripts/music_base/.venv/bin/activate"
 python_pkg_dir="$HOME/scripts/music_base"
 python_pkg="$python_pkg_dir/meta_getter.py"
 
@@ -131,5 +131,5 @@ if [[ -n "$iyaml" ]] && [[ ! -f $input_dir/$iyaml ]]; then
 fi
 
 cur_dir=$(pwd)
-
+# shellcheck source=/home/adam/scripts/music_base/.venv/bin/activate
 . "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$year" -c "$country" -m "$to_match" -a "$artist" -i "$release_id" -t "$title" -u "$url" -r "$query_str" && deactivate && cd "$cur_dir" || exit
