@@ -117,17 +117,24 @@ class MusicTextGetter(BaseRequest):
         return True
 
     @staticmethod
-    def in_text(base, questioned=None):
-        if not base:
+    def is_in(store, what=None) -> bool:
+        """
+        Check if all the words in a piece of text are in another set of words.
+        The method ignores articles.
+        :param store: 'Known' text, i.e. the text in which to try to locate words 
+        :param what: String all of whose words are to be located in the known text
+        :return: True of all the words in `what` are found in the `store`, otherwise False
+        """
+        if not store:
             return False
 
-        if not questioned:
+        if not what:
             return False
 
-        base_set = set(re.split(r'\W+', base.lower()))
-        quest_list = list(filter(lambda word: word not in ['a', 'an', 'the'], re.split(r'\W+', questioned.lower())))
+        store_set = set(re.split(r'\W+', store.lower()))
+        what_list = list(filter(lambda word: word not in ['a', 'an', 'the'], re.split(r'\W+', what.lower())))
 
-        return set(quest_list).issubset(base_set)
+        return set(what_list).issubset(store_set)
 
     def get_text_data(self, alt_artist=None, as_html_str=False):
         """
@@ -181,8 +188,8 @@ class MusicTextGetter(BaseRequest):
             if not (text_found := self.text_from_news_right(bsoup_found)):
                 continue
 
-            if not (self.in_text(text_found, variant) or self.in_text(text_found, self.album_artist) or
-                    self.in_text(text_found, alt_artist)):
+            if not (self.is_in(text_found, variant) or self.is_in(text_found, self.album_artist) or
+                    self.is_in(text_found, alt_artist)):
                 continue
 
             return text_found
