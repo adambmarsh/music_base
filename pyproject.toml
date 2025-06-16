@@ -1,7 +1,21 @@
 [project]
 name = "music-base"
 version = "0.1.0"
-description = "Add your description here"
+description = "Collect music metadata, normalise and store in DB"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "addict>=2.4.0",
+    "anyio>=4.8.0",
+    "asgiref>=3.8.1",
+    "beautifulsoup4>=4.13.1",
+    "discogs-wrapper-python>=1.0.1",
+    "django>=5.1.5",
+    "music-tag>=0.4.3",
+    "mutagen>=1.47.0",
+    "requests>=2.32.3",
+    "ruamel-base>=1.0.0",
+    "ruamel-yaml>=0.18.14",
+    "ruamel-yaml-clib>=0.2.12",
+    "tinytag>=2.0.0",
+]
