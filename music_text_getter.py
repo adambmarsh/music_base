@@ -116,6 +116,19 @@ class MusicTextGetter(BaseRequest):
 
         return True
 
+    @staticmethod
+    def in_text(base, questioned=None):
+        if not base:
+            return False
+
+        if not questioned:
+            return False
+
+        base_set = set(re.split(r'\W+', base.lower()))
+        quest_list = list(filter(lambda word: word not in ['a', 'an', 'the'], re.split(r'\W+', questioned.lower())))
+
+        return set(quest_list).issubset(base_set)
+
     def get_text_data(self, alt_artist=None, as_html_str=False):
         """
         Method to retrieve text data from a know source (JazzForum)
@@ -166,6 +179,10 @@ class MusicTextGetter(BaseRequest):
                 "html.parser").find("div", attrs={'class': "news_glowny_prawy"})
 
             if not (text_found := self.text_from_news_right(bsoup_found)):
+                continue
+
+            if not (self.in_text(text_found, variant) or self.in_text(text_found, self.album_artist) or
+                    self.in_text(text_found, alt_artist)):
                 continue
 
             return text_found
