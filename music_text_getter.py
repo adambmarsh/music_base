@@ -169,10 +169,10 @@ class MusicTextGetter(BaseRequest):
                 response = self._submit_request('GET', page_url, '')
             except ConnectionError:
                 log_it('info', __name__, f"Connection to {page_url} timed out")
-                break
+                return ""
             except Exception as e:
                 log_it('info', __name__, f"Unable to connect to {page_url}, got exception {repr(e)}")
-                break
+                return ""
 
             # Even if there is no data, the URL must work -- if not, give up at once
             if response.status_code > 200:

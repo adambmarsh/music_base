@@ -310,7 +310,7 @@ class TagSetter:
 
         return False
 
-    def clear_unwanted_tags_flac(self, file_name):
+    def clear_unwanted_tags_flac(self, file_name: str):
         """
         Clear unwanted tags in the audio file.
         :param file_name: A string containing the name of the audio file (flac, mp3, etc.)
@@ -344,7 +344,7 @@ class TagSetter:
 
         return file_object
 
-    def clear_unwanted_tags_mp3(self, file_name):
+    def clear_unwanted_tags_mp3(self, file_name: str):
         """
         Clear unwanted tags in the audio file.
         :param file_name: A string containing the name of the audio file (flac, mp3, etc.)
@@ -394,13 +394,12 @@ class TagSetter:
         # Check if digits  start file names, if all files start with a number, assume it is the track number.
         self.track_num_in_filename = self.files_start_with_track_num(file_names)
 
-        clear_unwanted = {'flac': self.clear_unwanted_tags_flac, 'mp3': self.clear_unwanted_tags_mp3}
-
         for f_name in file_names:
             track_tags, track_num = self.track_tags_from_yml(f_name)
             track_tags['totaltracks'] = len(file_names)
 
-            file_obj = clear_unwanted[self.audio_file_ext](f_name)
+            file_obj = self.clear_unwanted_tags_flac(
+                f_name) if self.audio_file_ext == 'flac' else self.clear_unwanted_tags_mp3(f_name)
 
             for track_tag, tag_value in track_tags.items():
                 if track_tag in ['tracknumber', 'year']:
