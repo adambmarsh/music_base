@@ -408,7 +408,11 @@ class TagSetter:
 
             for track_tag, tag_value in track_tags.items():
                 if track_tag in ['tracknumber', 'year']:
-                    file_obj[track_tag] = int(tag_value)
+                    try:
+                        file_obj[track_tag] = int(tag_value)
+                    except ValueError:
+                        log_it('error', __name__, f"No value for tag {repr(track_tag)}.")
+                        return False
                     continue
 
                 file_obj[track_tag] = str(tag_value)
