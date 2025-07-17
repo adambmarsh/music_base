@@ -266,7 +266,7 @@ class MetaGetter(MusicTextGetter):
         """
         Convert a string to a set, leaving out any empty elements.
         :param in_str: A string to convert
-        :param str_separator: Sepearator to use to break up the string
+        :param str_separator: Separator to use to break up the string
         :return: A set on success, otherwise an empty set
         """
         if not in_str:
@@ -591,7 +591,7 @@ if __name__ == '__main__':
                         dest='genre',
                         required=False)
     parser.add_argument("-m", "--match", help="Number of audio files the located album should match"
-                                              ", deafult is 0 (match count of audio file in --directory; -1 means"
+                                              ", default is 0 (match count of audio file in --directory; -1 means"
                                               " do not check",
                         type=str,
                         dest='match',
