@@ -19,6 +19,7 @@ from addict import Dict
 from anyio import create_task_group
 from asgiref.sync import sync_to_async
 from mutagen.easyid3 import EasyID3
+
 from mutagen.flac import FLAC, FLACNoHeaderError  # NOQA # pylint: disable=unused-import
 
 # noinspection PyProtectedMember

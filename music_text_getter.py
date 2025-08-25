@@ -5,8 +5,8 @@ import re
 
 from bs4 import BeautifulSoup, Tag
 from ruamel.yaml.scalarstring import PreservedScalarString as Pss
+from requests import ConnectionError as ConnError
 from request_base import BaseRequest  # pylint: disable=import-error
-from requests import ConnectionError
 from utils import log_it  # pylint: disable=import-error
 
 
@@ -22,8 +22,7 @@ class MusicTextGetter(BaseRequest):
         self.url = url if url else "https://jazzforum.com.pl/main/cd/"
         self.album_artist = album_artist
         self.album_title = album_title
-        self.search = query_str if query_str is not None else self.resolve_search(query_str if query_str else
-                                                                                  self.album_title)
+        self.search = query_str or self.resolve_search(query_str if query_str else self.album_title)
 
         super().__init__("", "")
         self.req_headers = {'Content-Type': 'application/json'}
@@ -167,10 +166,10 @@ class MusicTextGetter(BaseRequest):
             page_url = self.url + variant
             try:
                 response = self._submit_request('GET', page_url, '')
-            except ConnectionError:
+            except ConnError:
                 log_it('info', __name__, f"Connection to {page_url} timed out")
                 return ""
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 log_it('info', __name__, f"Unable to connect to {page_url}, got exception {repr(e)}")
                 return ""
 
