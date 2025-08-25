@@ -143,7 +143,7 @@ class TagSetter:
 
         return OrderedDict(sorted(tracks_only.items(), key=lambda item: item[0]))
 
-    def get_track_info_from_yml(self, in_key, in_number='') -> (str, any):
+    def get_track_info_from_yml(self, in_key, in_number='') -> tuple[str, int]:
         """
         Get audio track (song) info from YAML (file).
         If YAML contains track numbers in vinyl format, e.g. A1, B1, C2, etc.,
@@ -188,10 +188,6 @@ class TagSetter:
         :param in_tags: A dict containing existing tags
         :return: Modified dict of metadata tags
         """
-        if not isinstance(in_tags, dict):
-            log_it("warning", "tags not a dict")
-            return in_tags
-
         artist = self.yml.get('artist', '')
 
         if not artist:
@@ -246,7 +242,7 @@ class TagSetter:
 
         return track_no
 
-    def track_tags_from_yml(self, audio_file_name) -> (dict, str):
+    def track_tags_from_yml(self, audio_file_name) -> tuple[dict, int]:
         """
         Retrieve music track tags from a YAML file
         :param audio_file_name: Name of audio file
