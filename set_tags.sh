@@ -85,6 +85,22 @@ fi
 
 cur_dir=$(pwd)
 
+set_mp3_date() {
+    count=$(find "$input_dir" -iname '*.mp3' 2>/dev/null | wc -l)
+
+    if [ "$count" != 0 ]; then
+        echo "Setting mp3 date field ..."
+        year=$(ffprobe "$input_dir"/01_* 2>&1 | sed -E -n 's/^ *TDOR *: (.*)/\1/p')
+
+        for i in "$input_dir"/*.mp3; do
+            kid3-cli -c "set date $year" "$i"
+        done
+
+        echo "done"
+    fi 
+}
+
 ## Use path appropriate to the host system in the directive below:
 # shellcheck source=/home/adam/scripts/music_base/.venv/bin/activate
-. "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && cd "$cur_dir" || exit
+. "$activate_path" && cd "$python_pkg_dir" && python "$python_pkg" -d "$input_dir" -y "$iyaml" && deactivate && set_mp3_date && cd "$cur_dir" || exit
+
