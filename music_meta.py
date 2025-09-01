@@ -1070,7 +1070,16 @@ class MusicMeta:
             non_tag_data = {}
 
         tag_data = Dict(in_tags)
-        track = song_id_map.get(tag_data.track) if song_id_map else -1
+
+        if 'track' not in tag_data.keys():
+            tag_data.track = -1
+
+        try:
+            track = song_id_map.get(tag_data.track, -1) if song_id_map else -1
+        except TypeError:
+            log_it('error', __name__, f"\n{repr(tag_data)}")
+            track = -1
+
         ext_track_data = [] if not non_tag_data else non_tag_data.get('tracks', [])
         track_data = ext_track_data[track] if (ext_track_data and 0 <= track < len(ext_track_data)) else {}
 
@@ -1081,7 +1090,7 @@ class MusicMeta:
         return {
             'title': tag_data.title or '',
             'file': tag_data.file or '',
-            'track_id': (track + 1) or -1,
+            'track_id': (track + 1) if track > 0 else -1,
             'comment': self.determine_song_comment(in_tags, track_data),
             'genre': tag_data.genre or non_tag_data.get('genre', ''),
             'artist': tag_data.artist or non_tag_data.get('artist', ''),
