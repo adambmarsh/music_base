@@ -44,6 +44,9 @@ MIN_YEAR_DIGITS = 4
 MAX_YEAR_DIGITS = 4
 
 
+DEFAULT_TAG_MAPPING = {-1: -1}
+
+
 class MusicMeta:
     """
     This class encapsulates music metadata.
@@ -578,21 +581,21 @@ class MusicMeta:
         """
         return [int(c) if c.isdigit() else c for c in re.split(r'([:;!\-,/ ]+)', text) if c]
 
-    def map_track_ids(self, file_tags=None):
+    def map_track_ids(self, file_tags=None) -> dict:
         """
         Create a mapping of album track IDs
         :param file_tags: A list of file (song) tag dictionaries
         :return: A dictionary mapping actual track numbers to 0-based list of files
         """
         if not file_tags:
-            return None
+            return DEFAULT_TAG_MAPPING
 
         rx_pattern = re.compile(f"({'|'.join(USE_FILE_EXTENSIONS)})$")
         ids_list = [ft.get('track', None) for ft in file_tags if re.search(rx_pattern, ft.get('file', None))]
         ids_list = [id_obj for id_obj in ids_list if id_obj]
 
-        if not ids_list:
-            return {}
+        if not ids_list or len(ids_list) < len(file_tags):
+            return DEFAULT_TAG_MAPPING
 
         try:
             ids_list.sort(key=self.natural_keys if isinstance(ids_list[0], str) else None)
@@ -1066,16 +1069,19 @@ class MusicMeta:
         :param song_id_map: A dict mapping string song id's in an album/collection to numeric indexes
         :return: True if a new Song row has been created, otherwise False
         """
+        if song_id_map is None:
+            song_id_map = DEFAULT_TAG_MAPPING
+
         if not non_tag_data:
             non_tag_data = {}
 
         tag_data = Dict(in_tags)
 
-        if 'track' not in tag_data.keys():
+        if not tag_data.track:
             tag_data.track = -1
 
         try:
-            track = song_id_map.get(tag_data.track, -1) if song_id_map else -1
+            track = song_id_map.get(tag_data.track, -1)
         except TypeError:
             log_it('error', __name__, f"\n{repr(tag_data)}")
             track = -1
@@ -1090,7 +1096,7 @@ class MusicMeta:
         return {
             'title': tag_data.title or '',
             'file': tag_data.file or '',
-            'track_id': (track + 1) if track > 0 else -1,
+            'track_id': (track + 1) if track > 0 else track,
             'comment': self.determine_song_comment(in_tags, track_data),
             'genre': tag_data.genre or non_tag_data.get('genre', ''),
             'artist': tag_data.artist or non_tag_data.get('artist', ''),
