@@ -1080,14 +1080,13 @@ class MusicMeta:
         if not tag_data.track:
             tag_data.track = -1
 
-        try:
-            track = song_id_map.get(tag_data.track, -1)
-        except TypeError:
-            log_it('error', __name__, f"\n{repr(tag_data)}")
-            track = -1
+        track = song_id_map.get(tag_data.track, -1)
 
-        ext_track_data = [] if not non_tag_data else non_tag_data.get('tracks', [])
-        track_data = ext_track_data[track] if (ext_track_data and 0 <= track < len(ext_track_data)) else {}
+        ext_track_data = non_tag_data.get('tracks', [])
+        track_data = {}
+
+        if ext_track_data and 0 <= track < len(ext_track_data):
+            track_data = ext_track_data[track] 
 
         year = self.determine_song_year(tag_data.year, non_tag_data.get('year', 1900))
         use_date = album_inst.date if (album_inst and year == album_inst.date.year) else \
