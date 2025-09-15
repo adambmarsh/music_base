@@ -43,7 +43,6 @@ dir_names = [
 MIN_YEAR_DIGITS = 4
 MAX_YEAR_DIGITS = 4
 
-
 DEFAULT_TAG_MAPPING = {-1: -1}
 
 
@@ -1086,7 +1085,7 @@ class MusicMeta:
         track_data = {}
 
         if ext_track_data and 0 <= track < len(ext_track_data):
-            track_data = ext_track_data[track] 
+            track_data = ext_track_data[track]
 
         year = self.determine_song_year(tag_data.year, non_tag_data.get('year', 1900))
         use_date = album_inst.date if (album_inst and year == album_inst.date.year) else \
@@ -1095,7 +1094,7 @@ class MusicMeta:
         return {
             'title': tag_data.title or '',
             'file': tag_data.file or '',
-            'track_id': (track + 1) if track > 0 else track,
+            'track_id': (track + 1) if track >= 0 else track,
             'comment': self.determine_song_comment(in_tags, track_data),
             'genre': tag_data.genre or non_tag_data.get('genre', ''),
             'artist': tag_data.artist or non_tag_data.get('artist', ''),
