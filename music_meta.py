@@ -27,7 +27,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq  # NOQA  # pylint: d
 from tinytag import TinyTag
 from orm.models import Album, Song  # NOQA # pylint: disable=unused-import, disable=import-error
 import application_imports  # NOQA # pylint: disable=unused-import, disable=import-error
-from utils import eval_bool_str, log_it, read_yaml, USE_FILE_EXTENSIONS  # pylint: disable=import-error
+from utils import eval_bool, log_it, read_yaml, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 composer_classical = ['Beethoven', 'Mozart', 'Chopin']
 
@@ -64,7 +64,7 @@ class MusicMeta:
         self.albums_new_mod = 0
         self.tags = {}
         self.created = False
-        self.update = eval_bool_str(update_records)
+        self.update = eval_bool(update_records)
         self.max_albums = max_albums
 
     @property
