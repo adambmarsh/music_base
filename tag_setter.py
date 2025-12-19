@@ -11,7 +11,7 @@ from collections import OrderedDict
 import music_tag
 from mutagen.id3 import ID3
 
-from utils import eval_bool_str, last_dir_in_path, log_it, read_yaml  # pylint: disable=import-error
+from utils import eval_bool, last_dir_in_path, log_it, read_yaml  # pylint: disable=import-error
 from utils import USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
@@ -509,7 +509,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ts = TagSetter(in_dir=args.audio_dir, in_yml=args.yaml_file, in_correcting=eval_bool_str(args.corrections))
+    ts = TagSetter(in_dir=args.audio_dir, in_yml=args.yaml_file, in_correcting=eval_bool(args.corrections))
 
     if ts.correcting:
         ts.correct_tags()
