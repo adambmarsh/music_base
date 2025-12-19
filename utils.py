@@ -13,6 +13,7 @@ This module contains utility functions
 ###############################################################################
 import itertools
 import logging
+import json
 import os
 import re
 from enum import Enum
@@ -118,6 +119,28 @@ def read_yaml(f_path):
     return f_contents
 
 
+def write_json_file(page_dict, dest_dir=None, filename='temp', sort_keys=True):
+    """
+    Write a JSON file.
+    :param page_dict: A dictionary containing the data to write to file
+    :param dest_dir:Destination directory
+    :param filename: The name of the file as a string
+    :param sort_keys: A flag indicating whether to sort the keys in the output file
+    :return: Always True
+    """
+    cur_dir = os.getcwd()
+
+    if not os.path.isdir(dest_dir):
+        dest_dir = cur_dir
+
+    filepath = os.path.join(dest_dir, filename)
+
+    with open(filepath, 'w', encoding="UTF-8") as out:
+        out.write(json.dumps(page_dict, indent=4, sort_keys=sort_keys, ensure_ascii=False))
+
+    return True
+
+
 def write_yaml_file(file_data, out_dir=None):
     """
     Write dict to a YAML file.
@@ -157,26 +180,30 @@ def last_dir_in_path(in_path: str):
     return in_path.split("/")[-1]
 
 
-def eval_bool_str(in_str):
+def eval_bool(in_value):
     """
-    Evaluate the received string as a Boolean
-    :param in_str: String to evaluate
+    Evaluate the received value as a Boolean
+    :param in_value: String or int or bool to evaluate
     :return: True or False
     """
-    # Test int and bool
-    if isinstance(in_str, bool):
-        return in_str
 
-    if isinstance(in_str, int):
-        return bool(in_str)
-
-    # string
-    if not bool(in_str):
+    if isinstance(in_value, (list, dict, tuple)):
         return False
 
-    in_str = in_str.lower()
+    # Test int and bool
+    if isinstance(in_value, bool):
+        return in_value
 
-    if in_str != 'true':
+    if isinstance(in_value, (int, float)):
+        return bool(in_value)
+
+    # string
+    if not bool(in_value):
+        return False
+
+    in_value = in_value.lower()
+
+    if in_value != 'true':
         return False
 
     return True
