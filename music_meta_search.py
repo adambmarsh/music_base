@@ -198,8 +198,13 @@ class MusicMetaSearch:
 
         for val in in_tag_dict.values():
             if self.rx_search:
-                if re.search(re.compile(self.find_this), val):
-                    return True
+                try:
+                    if re.search(re.compile(self.find_this), str(val)):
+                        return True
+                except TypeError:
+                    log_it('error', __name__, f"Val={val} s_c={self.find_this}")
+                    exit(1)
+
                 continue
 
             if self.find_this in str(val):
@@ -671,5 +676,14 @@ if __name__ == '__main__':
 
     rd.collect_tags()
 
-    write_json_file(rd.tags, os.path.join(str(Path.home()), 'temp'), 'temp.json')
+    results_count = len(list(rd.tags.keys()))
+    if results_count > 0:
+        out_file = 'temp.json'
+        out_path = os.path.join(str(Path.home()), 'temp')
+        print(f"Writing results to {os.path.join(out_path, out_file)}")
+
+        write_json_file(rd.tags, out_path, out_file)
+        exit(0)
+
+    print(f"Search found {results_count} albums")
     sys.exit(0)
