@@ -166,9 +166,6 @@ class MusicMeta:
         if re.search(r'X{1,3}[A-Z]+DURATION', in_comment):
             return "DURATION " + re.sub(r'[A-Z]+.+:', '', in_comment)
 
-        if re.search(r'X{1,3}[A-Z]+', in_comment):
-            return ""
-
         return in_comment
 
     async def get_music_file_tags(self, in_file_info):
