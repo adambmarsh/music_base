@@ -203,7 +203,7 @@ class MusicMetaSearch:
                         return True
                 except TypeError:
                     log_it('error', __name__, f"Val={val} s_c={self.find_this}")
-                    exit(1)
+                    sys.exit(1)
 
                 continue
 
@@ -676,14 +676,15 @@ if __name__ == '__main__':
 
     rd.collect_tags()
 
-    results_count = len(list(rd.tags.keys()))
-    if results_count > 0:
-        out_file = 'temp.json'
+    RESULTS_COUNT = len(list(rd.tags.keys()))
+
+    if RESULTS_COUNT > 0:
+        OUT_FILE = 'temp.json'
         out_path = os.path.join(str(Path.home()), 'temp')
-        print(f"Writing results to {os.path.join(out_path, out_file)}")
+        print(f"Writing results to {os.path.join(out_path, OUT_FILE)}")
 
-        write_json_file(rd.tags, out_path, out_file)
-        exit(0)
+        write_json_file(rd.tags, out_path, OUT_FILE)
+        sys.exit(0)
 
-    print(f"Search found {results_count} albums")
+    print(f"Search found {RESULTS_COUNT} albums")
     sys.exit(0)
