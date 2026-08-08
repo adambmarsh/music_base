@@ -116,11 +116,9 @@ class TagSetter:
         :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
         :return: The received string after clean-up
         """
-        work_str = re.sub(NON_ALNUM_PATTERN, '', in_str)
-        if not in_num_str:
-            return work_str
+        work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
 
-        return re.sub(re.compile('^' + in_num_str), '', work_str)
+        return re.sub(NON_ALNUM_PATTERN, '', work_str)
 
     def track_info_all(self) -> OrderedDict:
         """
