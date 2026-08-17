@@ -12,6 +12,7 @@ from datetime import datetime
 from discogs_wrapper import DV
 
 from music_text_getter import MusicTextGetter  # pylint: disable=import-error
+# from tag_setter import NON_ALNUM_PATTERN
 from utils import log_it, read_yaml, write_yaml_file, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = ""
@@ -262,6 +263,20 @@ class MetaGetter(MusicTextGetter):
         return f_count == count_to_match
 
     @staticmethod
+    def clean_non_alpha(in_str, in_num_str="") -> str:
+        """
+        Remove non-alpha chars except spaces and, optionally, digits.
+        :param in_str: String to clean
+        :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
+        :return: The received string after clean-up
+        """
+        NON_ALNUM_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>=]+'
+
+        work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
+
+        return re.sub(NON_ALNUM_PATTERN, '', work_str)
+
+    @staticmethod
     def clean_set_from_str(in_str, str_separator=' '):
         """
         Convert a string to a set, leaving out any empty elements.
@@ -308,11 +323,15 @@ class MetaGetter(MusicTextGetter):
             l_title_set = album_title_set
             r_title_set = title_set
 
-        if not l_title_set.intersection(r_title_set):
+        l_title_str = self.clean_non_alpha(self.title).lower()
+        r_title_str = self.clean_non_alpha(album_title).lower()
+
+        # Titles must have the same components or be equal as strings
+        if not l_title_set.intersection(r_title_set) and l_title_str != r_title_str:
             return False
 
         if self.query and not set(re.split(r'\W', self.query.lower())).intersection(
-                set(re.split(r'\W', album_artist.lower() + " " + album_title.lower()))):
+                set(re.split(r'\W', album_artist.lower() + " " + r_title_str))):
             return False
 
         if self.org_data_url:
