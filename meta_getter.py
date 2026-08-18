@@ -12,7 +12,6 @@ from datetime import datetime
 from discogs_wrapper import DV
 
 from music_text_getter import MusicTextGetter  # pylint: disable=import-error
-# from tag_setter import NON_ALNUM_PATTERN
 from utils import log_it, read_yaml, write_yaml_file, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = ""
@@ -270,9 +269,9 @@ class MetaGetter(MusicTextGetter):
         :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
         :return: The received string after clean-up
         """
-        NON_ALNUM_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>=]+'
-
         work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
+
+        NON_ALNUM_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>=]+'
 
         return re.sub(NON_ALNUM_PATTERN, '', work_str)
 
