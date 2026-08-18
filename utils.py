@@ -28,6 +28,22 @@ OUT_RELATIVE_PATH = '/../out/'
 USE_FILE_EXTENSIONS = ["ape", "flac", "mp3", "ogg", "wma", "yml"]
 
 
+
+def clean_non_alpha(in_str, rx_ext_str='', in_num_str="") -> str:
+    """
+    Remove punctuation, brackets, underscores, etc. and, optionally, leading digits.
+    :param in_str: String to clean
+    :param rx_ext_str: Chars to add to the internal regex pattern as a string
+    :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
+    :return: The received string after clean-up
+    """
+    work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
+
+    rx_pattern = re.compile(f'[?!\'+-:;,._()\\[\\]~@\\&%<>={rx_ext_str}]+')
+
+    return re.sub(rx_pattern, '', work_str)
+
+
 def log_it(level='info', src_name=None, text=None):
     """
     Logger function

@@ -11,7 +11,7 @@ from collections import OrderedDict
 import music_tag
 from mutagen.id3 import ID3
 
-from utils import eval_bool, last_dir_in_path, log_it, read_yaml  # pylint: disable=import-error
+from utils import clean_non_alpha, eval_bool, last_dir_in_path, log_it, read_yaml  # pylint: disable=import-error
 from utils import USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 SCRIPT_DESCRIPTION = """Set metadata tags on audio files, e.g. mp3 or flac from a yaml file.
@@ -19,8 +19,6 @@ Make sure the audio files have names composed of track numbers and titles as in 
 
 See example_yml dir in https://github.com/adambmarsh/music_base
 """
-
-NON_ALNUM_PATTERN = r'[?!\'+\-:;,._()\[\]~@\&%<>= ]+'
 
 
 class TagSetter:
@@ -108,18 +106,6 @@ class TagSetter:
 
         return out_files
 
-    @staticmethod
-    def clean_non_alnum(in_str, in_num_str="") -> str:
-        """
-        Remove non-alnum chars and, optionally, digits.
-        :param in_str: String to clean
-        :param in_num_str: A string containing numbers, if provided it is used to extend the replacement pattern
-        :return: The received string after clean-up
-        """
-        work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
-
-        return re.sub(NON_ALNUM_PATTERN, '', work_str)
-
     def track_info_all(self) -> OrderedDict:
         """
         This method extracts track names/titles and numbers from the property yml. The original track number is
@@ -150,7 +136,7 @@ class TagSetter:
         :param in_number: track number from audio file
         :return: Track title without number and track number on success or empty string and -1
         """
-        clean_in_key = self.clean_non_alnum(in_key, in_number).lower()
+        clean_in_key = clean_non_alpha(in_key, ' ', in_number).lower()
 
         yml_titles = []
         track_count = 1
@@ -164,7 +150,7 @@ class TagSetter:
             track_count += 1
 
             # Clean track name of all punctuation, spaces and digits
-            clean_track_key = self.clean_non_alnum(track_name, org_track_num).lower()
+            clean_track_key = clean_non_alpha(track_name, ' ', org_track_num).lower()
             lkey = clean_in_key
             rkey = clean_track_key
 
