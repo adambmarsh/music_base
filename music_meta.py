@@ -146,7 +146,7 @@ class MusicMeta:
                 tag_dict = (TinyTag.get(f_path)).__dict__
 
             except Exception as ex:  # pylint: disable=broad-exception-caught
-                log_it("debug", __name__, repr(ex))
+                log_it("debug", __name__, repr(ex) + f" file {f_path}")
 
         return tag_dict
 
@@ -217,7 +217,7 @@ class MusicMeta:
                     return rel_date if not isinstance(rel_date, list) else next(iter(rel_date), '')
 
                 except Exception as ex:  # pylint: disable=broad-exception-caught
-                    log_it("debug", repr(ex))
+                    log_it("debug", repr(ex) + f" file {f}")
                     continue
 
         return None
@@ -588,15 +588,15 @@ class MusicMeta:
 
         rx_pattern = re.compile(f"({'|'.join(USE_FILE_EXTENSIONS)})$")
         ids_list = [ft.get('track', None) for ft in file_tags if re.search(rx_pattern, ft.get('file', None))]
-        ids_list = [id_obj for id_obj in ids_list if id_obj]
+        ids_list = [str(id_obj) for id_obj in ids_list if id_obj]
 
         if not ids_list or len(ids_list) < len(file_tags):
             return DEFAULT_TAG_MAPPING
 
         try:
-            ids_list.sort(key=self.natural_keys if isinstance(ids_list[0], str) else None)
+            ids_list.sort(key=self.natural_keys)
         except TypeError as te:
-            log_it("debug", __name__, repr(te))
+            log_it("debug", __name__, repr(te) + f" {repr(ids_list)}")
 
         return {f_id: ix for ix, f_id in enumerate(ids_list)}
 
