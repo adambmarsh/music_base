@@ -1076,7 +1076,7 @@ class MusicMeta:
         if not tag_data.track:
             tag_data.track = -1
 
-        track = song_id_map.get(tag_data.track, -1)
+        track = song_id_map.get(str(tag_data.track), -1)
 
         ext_track_data = non_tag_data.get('tracks', [])
         track_data = {}
