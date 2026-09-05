@@ -11,9 +11,8 @@ from datetime import datetime
 
 from discogs_wrapper import DV
 
-from utils import clean_non_alpha
 from music_text_getter import MusicTextGetter  # pylint: disable=import-error
-from utils import log_it, read_yaml, write_yaml_file, USE_FILE_EXTENSIONS  # pylint: disable=import-error
+from utils import clean_non_alpha, log_it, read_yaml, write_yaml_file, USE_FILE_EXTENSIONS  # pylint: disable=import-error
 
 
 SCRIPT_DESCRIPTION = ""
