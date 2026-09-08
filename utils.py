@@ -39,9 +39,8 @@ def clean_non_alpha(in_str, rx_ext_str='', in_num_str="") -> str:
     """
     work_str = re.sub(re.compile('^' + in_num_str + '[ _]'), '', in_str) if in_num_str else in_str
 
-    rx_pattern = re.compile(f'[?!\'+-:;,._()\\[\\]~@\\&%<>={rx_ext_str}]+')
-
-    return re.sub(rx_pattern, '', work_str)
+    return re.sub(re.compile('[\\?\\!\'\\+\\-\\*:;,\\._\\{\\}\\(\\)\\[\\]\\~\\@\\&\\%<>\\=' + f'{rx_ext_str}]+'), '',
+        work_str)
 
 
 def log_it(level='info', src_name=None, text=None):
