@@ -217,9 +217,13 @@ class TagSetter:
             return int(in_number)
 
         found = re.search(r'^[0-9]{1,3}[_ ]', in_name)
+        found_d = ''
+
+        if found:
+            found_d = in_name[found.start(): found.end()].strip('_ ')
 
         try:
-            track_no = int(in_number if not found else in_name[found.start(): found.end()].strip('_'))
+            track_no = int(in_number or found_d)
         except ValueError as ve:
             log_it("error", "extract_track_num_from_file_name", {repr(ve)})
             return -1
@@ -263,14 +267,16 @@ class TagSetter:
 
         return tags, track_no
 
-    def files_start_with_track_num(self, in_file_names) -> bool:
+    def files_start_with_track_num(self, in_file_names: list) -> bool:
         """
-        Check if all files start with a track number and set a flag on the class. The numbers must be
-        consecutive.
-        :param in_file_names:
-        :return: True if numbers start the file names, otherwise False
+        Check if all audio files start with a track number. Numbering should be
+        consistent and, when sorted, ascending, although gaps (missing tracks)
+        are acceptable.
+
+        :param in_file_names: Named of audio files
+        :return: True if all audio files start with a number, otherwise False
         """
-        numbered = [f for f in in_file_names if re.match(r'^\d{1,3}[_ ]', f)]
+        numbered = [f for f in in_file_names if re.match(r'^\d+[_ ]', f)]
 
         if not numbered:
             return False
@@ -278,17 +284,29 @@ class TagSetter:
         if len(numbered) != len(in_file_names):
             return False
 
-        track_nos = [self.extract_track_num_from_file_name(f) for f in in_file_names]
+        track_nos = sorted([self.extract_track_num_from_file_name(f) for f in in_file_names])
 
-        if track_nos and len(str(track_nos[0])) > 2:
-            track_nos = [int(str(tn)[1:]) for tn in track_nos]
+        if not track_nos:
+            return False
 
-        maximum = max(track_nos)
+        # Expect consistent numbering - either 1 - 99 or CD ranges 101 .. 199, 201 ... 299, etc.
+        if max(track_nos) > 100 and min(track_nos) < 100:
+            return False
 
-        if sum(track_nos) == maximum * (maximum + 1) / 2:
-            return True
+        work_track_nos = track_nos
 
-        return False
+        while work_track_nos:
+            highest = max(work_track_nos)
+            quotient, remainder = divmod(highest, 100)
+
+            now_set = set((quotient * 100) + x for x in range(1, remainder + 1))
+            if not now_set.intersection(work_track_nos):
+                return False
+
+            work_track_nos = set(work_track_nos) - now_set
+
+        return True
+
 
     def clear_unwanted_tags_flac(self, file_name: str):
         """
@@ -371,7 +389,7 @@ class TagSetter:
         """
         file_names = self.get_audio_file_list()
 
-        # Check if digits  start file names, if all files start with a number, assume it is the track number.
+        # Check if all audio files start with a number ( if so, assume it is the track number).
         self.track_num_in_filename = self.files_start_with_track_num(file_names)
 
         clear_unwanted = {
